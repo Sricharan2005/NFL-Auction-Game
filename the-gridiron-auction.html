@@ -1,0 +1,1483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gridiron Auction — All-Eras NFL Draft</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Teko:wght@400;500;600;700&family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#070a10;
+    --field:#0f1a2c;
+    --field-2:#152641;
+    --chalk:#eef2f8;
+    --chalk-dim:#8fa2bd;
+    --gold:#3b82f6;
+    --gold-dim:#1e3a66;
+    --rust:#7a3222;
+    --rust-bright:#e2643c;
+    --line:#1f3350;
+    --shadow: 0 10px 30px rgba(0,0,0,.55);
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(ellipse at top, #12233d 0%, var(--ink) 60%);
+    color:var(--chalk);
+    font-family:'IBM Plex Sans Condensed', sans-serif;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    padding:28px 14px 60px;
+  }
+  .app{width:100%;max-width:960px;}
+  h1,h2,h3,.display{
+    font-family:'Teko', sans-serif;
+    font-weight:600;
+    letter-spacing:.02em;
+    text-transform:uppercase;
+  }
+  .mono{font-family:'IBM Plex Mono', monospace;}
+
+  .masthead{
+    display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:8px;
+    border-bottom:2px solid var(--gold-dim); padding-bottom:10px; margin-bottom:18px;
+  }
+  .masthead h1{font-size:44px; margin:0; color:var(--chalk); line-height:1;}
+  .masthead h1 span{color:var(--gold);}
+  .masthead .tag{font-size:14px; color:var(--chalk-dim); letter-spacing:.12em; text-transform:uppercase;}
+
+  .yardline-track{
+    position:relative; height:58px; margin:10px 0 20px;
+    background:repeating-linear-gradient(90deg, var(--field) 0 40px, var(--field-2) 40px 80px);
+    border:1px solid var(--line); border-radius:4px;
+    display:flex; align-items:center; overflow:hidden;
+  }
+  .yardline-track .marker{
+    flex:1; text-align:center; position:relative; height:100%;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    border-right:1px dashed rgba(241,237,225,.18);
+    font-size:10px; letter-spacing:.05em; text-transform:uppercase; color:var(--chalk-dim);
+    transition: color .3s, background .3s;
+  }
+  .yardline-track .marker:last-child{border-right:none;}
+  .yardline-track .marker .num{font-family:'Teko'; font-size:18px; line-height:1; color:var(--chalk-dim);}
+  .yardline-track .marker.done{color:var(--gold); background:rgba(201,162,39,.12);}
+  .yardline-track .marker.done .num{color:var(--gold);}
+  .yardline-track .marker.active{color:var(--ink); background:var(--gold);}
+  .yardline-track .marker.active .num{color:var(--ink);}
+
+  .panel{
+    background:linear-gradient(180deg, rgba(30,61,40,.55), rgba(14,22,17,.55));
+    border:1px solid var(--line); border-radius:8px; padding:20px; margin-bottom:18px;
+    box-shadow: var(--shadow);
+  }
+  .lede{font-size:17px; line-height:1.55; color:var(--chalk-dim); margin:0 0 6px;}
+  .btn{
+    font-family:'Teko'; font-size:20px; letter-spacing:.04em; text-transform:uppercase;
+    background:var(--gold); color:var(--ink); border:none; border-radius:5px;
+    padding:10px 22px; cursor:pointer; transition: transform .12s, background .12s;
+  }
+  .btn:hover{background:#5b98f8; transform:translateY(-1px);}
+  .btn:active{transform:translateY(0px);}
+  .btn.secondary{background:transparent; color:var(--chalk); border:1px solid var(--chalk-dim);}
+  .btn.secondary:hover{background:rgba(241,237,225,.08); color:var(--chalk);}
+  .btn:disabled{opacity:.35; cursor:not-allowed; transform:none;}
+
+  .budgets{display:flex; gap:14px; margin-bottom:16px;}
+  .budget-card{
+    flex:1; background:var(--ink); border:1px solid var(--line); border-radius:6px;
+    padding:12px 16px; display:flex; justify-content:space-between; align-items:center;
+  }
+  .budget-card .who{font-size:13px; letter-spacing:.1em; text-transform:uppercase; color:var(--chalk-dim);}
+  .budget-card .amt{font-family:'IBM Plex Mono'; font-size:26px; font-weight:600; color:var(--gold);}
+  .budget-card.you{border-color:var(--gold-dim);}
+  .skip-count{font-size:11px; color:var(--chalk-dim); letter-spacing:.04em; text-transform:uppercase;}
+
+  .slot-label{font-size:15px; letter-spacing:.14em; text-transform:uppercase; color:var(--gold); margin-bottom:2px;}
+
+  .needs-list{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;}
+  .need-chip{
+    display:flex; align-items:center; gap:7px; background:var(--ink);
+    border:1px solid var(--line); border-radius:20px; padding:6px 12px;
+    font-size:13px; letter-spacing:.06em; text-transform:uppercase; color:var(--chalk-dim);
+  }
+  .need-chip.filled{border-color:var(--gold-dim); color:var(--gold);}
+  .need-chip .dot{width:8px; height:8px; border-radius:50%; background:var(--line); display:inline-block;}
+  .need-chip .dot.on{background:var(--gold);}
+
+  .bid-stage{display:flex; gap:20px; align-items:flex-start; flex-wrap:wrap;}
+  .bid-card{
+    flex:1 1 220px; background:var(--ink); border:1px solid var(--gold-dim); border-radius:8px;
+    padding:20px; text-align:center;
+  }
+  .avatar{
+    width:64px; height:64px; border-radius:50%; margin:0 auto 10px;
+    background:radial-gradient(circle at 35% 30%, var(--field-2), var(--ink));
+    border:2px solid var(--line); display:flex; align-items:center; justify-content:center;
+    padding:13px;
+  }
+  .avatar svg{width:100%; height:100%;}
+  .avatar-sm{
+    width:30px; height:30px; border-radius:50%; flex-shrink:0;
+    background:radial-gradient(circle at 35% 30%, var(--field-2), var(--ink));
+    border:1px solid var(--line); display:flex; align-items:center; justify-content:center;
+    padding:6px; margin-right:8px;
+  }
+  .avatar-sm svg{width:100%; height:100%;}
+  .bid-card .pname{font-family:'Teko'; font-size:32px; color:var(--chalk); line-height:1.05;}
+  .bid-card .pmeta{color:var(--chalk-dim); font-size:13px; text-transform:uppercase; letter-spacing:.08em; margin:4px 0 10px;}
+  .current-bid{flex:1 1 260px;}
+  .current-bid .label{font-size:13px; letter-spacing:.12em; text-transform:uppercase; color:var(--chalk-dim);}
+  .current-bid .amt{font-family:'Teko'; font-size:56px; color:var(--gold); line-height:1;}
+  .current-bid .holder{font-size:14px; color:var(--chalk-dim); margin-bottom:14px;}
+  .bid-controls{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;}
+  .bid-log{
+    margin-top:14px; font-family:'IBM Plex Mono'; font-size:13px; color:var(--chalk-dim);
+    max-height:140px; overflow-y:auto; border-top:1px dashed var(--line); padding-top:10px;
+  }
+  .bid-log div{margin-bottom:4px;}
+  .bid-log .rust-txt{color:var(--rust-bright);}
+  .bid-log .gold-txt{color:var(--gold);}
+  .bid-log .dim-txt{color:var(--chalk-dim); font-style:italic;}
+
+  .roster-grid{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+  .roster-col h3{margin:0 0 10px; font-size:26px;}
+  .roster-row{
+    display:flex; justify-content:space-between; align-items:center;
+    background:var(--ink); border:1px solid var(--line); border-radius:6px;
+    padding:7px 13px; margin-bottom:8px;
+  }
+  .roster-row .nm-wrap{display:flex; align-items:center; flex:1; min-width:0;}
+  .roster-row .slot{font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--chalk-dim); width:70px;}
+  .roster-row .nm{font-family:'Teko'; font-size:19px; flex:1; text-align:left; padding-left:6px;}
+  .roster-row .ov{font-family:'IBM Plex Mono'; color:var(--gold); font-weight:600;}
+  .roster-row.empty .nm{color:var(--chalk-dim); font-style:italic;}
+
+  .scoreboard{
+    background:var(--ink); border:2px solid var(--gold-dim); border-radius:10px;
+    padding:26px; text-align:center; margin-bottom:18px;
+  }
+  .score-row{display:flex; justify-content:center; align-items:center; gap:34px;}
+  .score-team{flex:1;}
+  .score-team .tname{font-size:18px; letter-spacing:.1em; text-transform:uppercase; color:var(--chalk-dim);}
+  .score-team .tval{font-family:'IBM Plex Mono'; font-size:72px; font-weight:600; color:var(--gold); line-height:1;}
+  .score-vs{font-family:'Teko'; font-size:26px; color:var(--chalk-dim);}
+  .quarter-table{width:100%; border-collapse:collapse; margin-top:20px; font-family:'IBM Plex Mono'; font-size:14px;}
+  .quarter-table th,.quarter-table td{border:1px solid var(--line); padding:6px 10px; text-align:center;}
+  .quarter-table th{color:var(--chalk-dim); font-weight:500; text-transform:uppercase; font-size:11px; letter-spacing:.08em;}
+  .recap{font-size:16px; line-height:1.6; color:var(--chalk-dim); margin-top:16px; text-align:left;}
+  .recap b{color:var(--chalk);}
+
+  .boxscore-grid{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+  .boxscore-col h4{margin:0 0 8px; font-size:18px; letter-spacing:.08em; text-transform:uppercase; color:var(--gold-dim);}
+  .stat-line{
+    font-family:'IBM Plex Mono'; font-size:13px; color:var(--chalk-dim);
+    background:var(--ink); border:1px solid var(--line); border-radius:5px;
+    padding:7px 10px; margin-bottom:6px;
+  }
+  .stat-line b{color:var(--chalk); font-family:'IBM Plex Sans Condensed'; font-weight:600;}
+
+  .history-row{
+    display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;
+    background:var(--ink); border:1px solid var(--line); border-radius:6px;
+    padding:12px 16px; margin-bottom:10px;
+  }
+  .history-row .hdate{font-size:12px; color:var(--chalk-dim); letter-spacing:.05em;}
+  .history-row .hscore{font-family:'IBM Plex Mono'; font-size:22px; color:var(--gold);}
+  .history-row .hbadge{
+    font-family:'Teko'; font-size:16px; letter-spacing:.06em; text-transform:uppercase;
+    padding:3px 10px; border-radius:4px;
+  }
+  .history-row .hbadge.win{background:rgba(201,162,39,.18); color:var(--gold);}
+  .history-row .hbadge.loss{background:rgba(201,75,52,.18); color:var(--rust-bright);}
+  .history-row .hmeta{font-size:12px; color:var(--chalk-dim); width:100%;}
+
+  .footnote{font-size:12px; color:var(--chalk-dim); text-align:center; margin-top:20px; opacity:.7;}
+  .hidden{display:none !important;}
+  .center{text-align:center;}
+  .flex-actions{display:flex; gap:10px; justify-content:center; margin-top:16px; flex-wrap:wrap;}
+  input[type=number]{
+    width:90px; background:var(--field-2); border:1px solid var(--line); color:var(--chalk);
+    font-family:'IBM Plex Mono'; font-size:16px; border-radius:5px; padding:8px 10px;
+  }
+  @media (max-width:640px){
+    .roster-grid, .boxscore-grid{grid-template-columns:1fr;}
+    .masthead h1{font-size:32px;}
+    .score-team .tval{font-size:48px;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="masthead">
+    <h1>Gridiron<span>Auction</span></h1>
+    <div class="tag">All-Eras NFL &middot; Speculative Madden 26/27 Ratings</div>
+  </div>
+
+  <!-- ===================== SETUP SCREEN ===================== -->
+  <div id="screen-setup" class="panel">
+    <h2 style="margin-top:0;font-size:30px;">Build a legend. Outbid the league.</h2>
+    <p class="lede">Draft one QB, one RB, two WRs, one TE, one defensive anchor, one team defense, and a head coach — pulled from every era of NFL history. You've got a <b style="color:var(--gold)">$200</b> budget and a rival GM who now spends like a real GM: pacing their money across every remaining need instead of blowing it all on the first name called.</p>
+    <p class="lede">Names come up one at a time in random order, and either side can pass. Ratings are speculative, built in the style of Madden 26/27 overalls for legends — and legendary defenses — that never actually got a Madden card.</p>
+    <div class="center" style="margin-top:20px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+      <button class="btn" id="btn-start" style="font-size:26px;padding:14px 34px;">Enter the Auction House</button>
+      <button class="btn secondary" id="btn-view-history" style="font-size:22px;padding:12px 26px;">Match History</button>
+    </div>
+  </div>
+
+  <!-- ===================== HISTORY SCREEN ===================== -->
+  <div id="screen-history" class="hidden panel">
+    <h2 style="margin-top:0;">Match History</h2>
+    <p class="lede" id="history-empty" style="display:none;">No games played yet — draft a squad and simulate a matchup to start your record.</p>
+    <div id="history-list"></div>
+    <div class="center" style="margin-top:14px;">
+      <button class="btn secondary" id="btn-history-back">Back</button>
+    </div>
+  </div>
+
+  <!-- ===================== DRAFT SCREEN ===================== -->
+  <div id="screen-draft" class="hidden">
+    <div class="yardline-track" id="yardtrack"></div>
+
+    <div class="budgets">
+      <div class="budget-card you">
+        <div class="who">Your Budget</div>
+        <div style="text-align:right;">
+          <div class="amt mono">$<span id="user-budget">200</span></div>
+          <div class="skip-count" id="user-skip-count">3 skips left</div>
+        </div>
+      </div>
+      <div class="budget-card">
+        <div class="who">Rival GM Budget</div>
+        <div style="text-align:right;">
+          <div class="amt mono">$<span id="ai-budget">200</span></div>
+          <div class="skip-count" id="ai-skip-count">3 skips left</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="slot-label">YOUR BOARD</div>
+      <div class="needs-list" id="needs-list"></div>
+    </div>
+
+    <div class="panel">
+      <div class="slot-label" id="onclock-label">ON THE CLOCK</div>
+      <div class="bid-stage">
+        <div class="bid-card">
+          <div class="avatar" id="bid-avatar"></div>
+          <div class="pname" id="bid-pname">—</div>
+          <div class="pmeta" id="bid-pmeta">—</div>
+          <div class="ovr-badge" style="display:inline-flex;align-items:baseline;gap:5px;background:var(--field-2);border:1px solid var(--gold-dim);border-radius:4px;padding:4px 9px;">
+            <span class="n" id="bid-povr" style="font-family:'IBM Plex Mono';font-weight:600;font-size:20px;color:var(--gold);">--</span>
+            <span class="l" style="font-size:10px;letter-spacing:.1em;color:var(--chalk-dim);text-transform:uppercase;">OVR</span>
+          </div>
+        </div>
+        <div class="current-bid" id="bid-action-area"></div>
+      </div>
+      <div class="bid-log" id="bid-log"></div>
+    </div>
+  </div>
+
+  <!-- ===================== ROSTER REVIEW SCREEN ===================== -->
+  <div id="screen-roster" class="hidden panel">
+    <h2 style="margin-top:0;">Final Rosters</h2>
+    <div class="roster-grid">
+      <div class="roster-col">
+        <h3 style="color:var(--gold);">Your Squad</h3>
+        <div id="roster-user"></div>
+      </div>
+      <div class="roster-col">
+        <h3 style="color:var(--chalk-dim);">Rival Squad</h3>
+        <div id="roster-ai"></div>
+      </div>
+    </div>
+    <div class="center" style="margin-top:10px;">
+      <button class="btn" id="btn-simulate" style="font-size:26px;padding:14px 34px;">Simulate the Game</button>
+    </div>
+  </div>
+
+  <!-- ===================== RESULT SCREEN ===================== -->
+  <div id="screen-result" class="hidden">
+    <div class="scoreboard">
+      <div class="score-row">
+        <div class="score-team">
+          <div class="tname">You</div>
+          <div class="tval mono" id="final-user-score">0</div>
+        </div>
+        <div class="score-vs">FINAL</div>
+        <div class="score-team">
+          <div class="tname">Rival</div>
+          <div class="tval mono" id="final-ai-score">0</div>
+        </div>
+      </div>
+      <table class="quarter-table">
+        <thead><tr><th></th><th>Q1</th><th>Q2</th><th>Q3</th><th>Q4</th><th>F</th></tr></thead>
+        <tbody>
+          <tr><td>You</td><td id="q-you-1"></td><td id="q-you-2"></td><td id="q-you-3"></td><td id="q-you-4"></td><td id="q-you-f"></td></tr>
+          <tr><td>Rival</td><td id="q-ai-1"></td><td id="q-ai-2"></td><td id="q-ai-3"></td><td id="q-ai-4"></td><td id="q-ai-f"></td></tr>
+        </tbody>
+      </table>
+      <div class="recap" id="recap-text"></div>
+    </div>
+
+    <div class="panel">
+      <div class="slot-label">BOX SCORE</div>
+      <div class="boxscore-grid">
+        <div class="boxscore-col">
+          <h4 style="color:var(--gold);">You</h4>
+          <div id="box-user"></div>
+        </div>
+        <div class="boxscore-col">
+          <h4>Rival</h4>
+          <div id="box-ai"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex-actions">
+      <button class="btn" id="btn-again">Draft a New Squad</button>
+    </div>
+  </div>
+
+  <div class="footnote">Unofficial fan project. Not affiliated with or endorsed by the NFL, EA, or any team. All ratings and statlines are speculative estimates, not official data. Match history is saved to your account via this artifact's storage — no separate login required.</div>
+</div>
+
+<script>
+/* =====================================================================
+   DATA — speculative, era-spanning legend pool with Madden-style OVRs.
+===================================================================== */
+const QBs = [
+ ["Tom Brady","2000s-10s",99,"Current Era"],["Patrick Mahomes","2020s",99,"Current Era"],
+ ["Peyton Manning","2000s",99,"Modern Era"],["Joe Montana","1980s",97,"Highlight Era"],
+ ["Aaron Rodgers","2010s",99,"Modern Era"],["Dan Marino","1980s",96,"Highlight Era"],
+ ["Drew Brees","2010s",99,"Modern Era"],["Josh Allen","2020s",99,"Current Era"],
+ ["Johnny Unitas","1960s",95,"Steel Curtain Era"],["John Elway","1990s",95,"Highlight Era"],
+ ["Steve Young","1990s",95,"Highlight Era"],["Otto Graham","1950s",94,"Leather Era"],
+ ["Brett Favre","1990s",94,"Highlight Era"],["Joe Burrow","2020s",94,"Current Era"],
+ ["Roger Staubach","1970s",93,"Steel Curtain Era"],["Bart Starr","1960s",92,"Steel Curtain Era"],
+ ["Kurt Warner","2000s",92,"Modern Era"],["Lamar Jackson","2020s",99,"Current Era"],
+ ["Dan Fouts","1980s",92,"Highlight Era"],["Justin Herbert","2020s",92,"Current Era"],
+ ["Jalen Hurts","2020s",92,"Current Era"],["Fran Tarkenton","1970s",91,"Steel Curtain Era"],
+ ["Troy Aikman","1990s",91,"Highlight Era"],["Ben Roethlisberger","2000s",91,"Modern Era"],
+ ["Sammy Baugh","1940s",90,"Leather Era"],["Terry Bradshaw","1970s",90,"Steel Curtain Era"],
+ ["Jim Kelly","1990s",90,"Highlight Era"],["Y.A. Tittle","1950s",90,"Leather Era"],
+ ["Steve McNair","2000s",90,"Modern Era"],["Donovan McNabb","2000s",90,"Modern Era"],
+ ["Michael Vick","2000s",90,"Modern Era"],["Philip Rivers","2010s",90,"Modern Era"],
+ ["Cam Newton","2010s",90,"Modern Era"],["Andrew Luck","2010s",90,"Modern Era"],
+ ["C.J. Stroud","2020s",90,"Current Era"],["Warren Moon","1990s",89,"Highlight Era"],
+ ["Russell Wilson","2010s",99,"Modern Era"],["Sonny Jurgensen","1960s",89,"Steel Curtain Era"],
+ ["Bob Griese","1970s",89,"Steel Curtain Era"],["Ken Stabler","1970s",89,"Steel Curtain Era"],
+ ["Randall Cunningham","1990s",89,"Highlight Era"],["Matt Ryan","2010s",89,"Modern Era"],
+ ["Dak Prescott","2020s",89,"Current Era"],["Jared Goff","2020s",89,"Current Era"],
+ ["Norm Van Brocklin","1950s",88,"Leather Era"],["Len Dawson","1960s",88,"Steel Curtain Era"],
+ ["Joe Namath","1960s",88,"Steel Curtain Era"],["Rich Gannon","2000s",88,"Modern Era"],
+ ["Brock Purdy","2020s",88,"Current Era"],["Bobby Layne","1950s",87,"Leather Era"],
+ ["Tony Romo","2010s",87,"Modern Era"],["Matthew Stafford","2010s",87,"Modern Era"],
+ ["Joe Theismann","1980s",86,"Highlight Era"],["Boomer Esiason","1980s",86,"Highlight Era"],
+ ["Eli Manning","2010s",86,"Modern Era"],["Deshaun Watson","2020s",86,"Current Era"],
+ ["Ken Anderson","1970s",86,"Steel Curtain Era"],["Jayden Daniels","2020s",86,"Current Era"],
+ ["Phil Simms","1980s",85,"Highlight Era"],["Daunte Culpepper","2000s",85,"Modern Era"],
+ ["George Blanda","1950s",84,"Leather Era"],["Carson Palmer","2000s",84,"Modern Era"],
+ ["Kirk Cousins","2020s",84,"Current Era"],["Trevor Lawrence","2020s",84,"Current Era"],
+ ["Tua Tagovailoa","2020s",84,"Current Era"],["Bert Jones","1970s",84,"Steel Curtain Era"],
+ ["Mark Brunell","1990s",84,"Highlight Era"],["Colin Kaepernick","2010s",84,"Modern Era"],
+ ["Roman Gabriel","1960s",83,"Steel Curtain Era"],["Jeff Garcia","2000s",83,"Modern Era"],
+ ["Jim Plunkett","1970s",83,"Steel Curtain Era"],["Matt Hasselbeck","2000s",83,"Modern Era"],
+ ["Baker Mayfield","2020s",83,"Current Era"],["Bo Nix","2020s",83,"Current Era"],
+ ["Derek Carr","2020s",82,"Current Era"],["Brian Sipe","1980s",82,"Highlight Era"],
+ ["Ron Jaworski","1980s",82,"Highlight Era"],["Charley Conerly","1950s",82,"Leather Era"],
+ ["Trent Green","2000s",82,"Modern Era"],["Alex Smith","2010s",82,"Modern Era"],
+ ["Danny White","1980s",82,"Highlight Era"],["Sam Darnold","2020s",82,"Current Era"],
+ ["Bernie Kosar","1980s",81,"Highlight Era"],["Geno Smith","2020s",81,"Current Era"],
+ ["Ryan Tannehill","2020s",81,"Current Era"],["Jim Hart","1970s",80,"Steel Curtain Era"],
+ ["John Hadl","1960s",80,"Steel Curtain Era"],["Doug Williams","1980s",80,"Highlight Era"],
+ ["Craig Morton","1970s",80,"Steel Curtain Era"],["Jim Everett","1980s",80,"Highlight Era"],
+ ["Vinny Testaverde","1990s",80,"Highlight Era"],["Mark Rypien","1990s",80,"Highlight Era"],
+ ["Brad Johnson","2000s",80,"Modern Era"],["Jay Cutler","2010s",80,"Modern Era"],
+ ["Archie Manning","1970s",79,"Steel Curtain Era"],["Frank Ryan","1960s",79,"Steel Curtain Era"],
+ ["Tobin Rote","1950s",79,"Leather Era"],["Billy Kilmer","1970s",79,"Steel Curtain Era"],
+ ["Neil Lomax","1980s",79,"Highlight Era"],["Dave Krieg","1980s",79,"Highlight Era"],
+ ["Chad Pennington","2000s",79,"Modern Era"],["Matt Schaub","2010s",79,"Modern Era"],
+ ["Lynn Dickey","1980s",79,"Highlight Era"],["Steve Grogan","1970s",79,"Steel Curtain Era"],
+ ["Earl Morrall","1960s",78,"Steel Curtain Era"],["Greg Landry","1970s",78,"Steel Curtain Era"],
+ ["Norm Snead","1960s",77,"Steel Curtain Era"],["Jeff Hostetler","1990s",76,"Highlight Era"]
+];
+const RBs = [
+ ["Jim Brown","1960s",99,"Steel Curtain Era"],["Barry Sanders","1990s",100,"Highlight Era"],
+ ["Walter Payton","1980s",98,"Highlight Era"],["Emmitt Smith","1990s",96,"Highlight Era"],
+ ["Adrian Peterson","2010s",99,"Modern Era"],["LaDainian Tomlinson","2000s",99,"Modern Era"],
+ ["Marshall Faulk","2000s",99,"Modern Era"],["Christian McCaffrey","2020s",99,"Current Era"],
+ ["Eric Dickerson","1980s",94,"Highlight Era"],["O.J. Simpson","1970s",93,"Steel Curtain Era"],
+ ["Earl Campbell","1970s",93,"Steel Curtain Era"],["Derrick Henry","2020s",93,"Current Era"],
+ ["Thurman Thomas","1990s",93,"Highlight Era"],["Bo Jackson","1980s",92,"Highlight Era"],
+ ["Gale Sayers","1960s",92,"Steel Curtain Era"],["Steve Van Buren","1940s",92,"Leather Era"],
+ ["Marcus Allen","1980s",92,"Highlight Era"],["Terrell Davis","1990s",92,"Highlight Era"],
+ ["Marion Motley","1950s",90,"Leather Era"],["Tony Dorsett","1980s",90,"Highlight Era"],
+ ["Saquon Barkley","2020s",99,"Current Era"],["Bronko Nagurski","1930s",90,"Leather Era"],
+ ["Larry Csonka","1970s",90,"Steel Curtain Era"],["John Riggins","1980s",90,"Highlight Era"],
+ ["LeSean McCoy","2010s",90,"Modern Era"],["Frank Gore","2010s",90,"Modern Era"],
+ ["Marshawn Lynch","2010s",90,"Modern Era"],["Ezekiel Elliott","2020s",90,"Current Era"],
+ ["Todd Gurley","2020s",90,"Current Era"],["Franco Harris","1970s",89,"Steel Curtain Era"],
+ ["Priest Holmes","2000s",89,"Modern Era"],["Jerome Bettis","2000s",89,"Modern Era"],
+ ["Le'Veon Bell","2010s",89,"Modern Era"],["Jamaal Charles","2010s",89,"Modern Era"],
+ ["Alvin Kamara","2020s",89,"Current Era"],["Nick Chubb","2020s",89,"Current Era"],
+ ["Jim Taylor","1960s",88,"Steel Curtain Era"],["Curtis Martin","1990s",88,"Highlight Era"],
+ ["Lenny Moore","1960s",88,"Steel Curtain Era"],["Roger Craig","1980s",88,"Highlight Era"],
+ ["Shaun Alexander","2000s",88,"Modern Era"],["Edgerrin James","2000s",87,"Modern Era"],
+ ["Hugh McElhenny","1950s",87,"Leather Era"],["Herschel Walker","1980s",87,"Highlight Era"],
+ ["Eddie George","1990s",87,"Highlight Era"],["Tiki Barber","2000s",87,"Modern Era"],
+ ["Dalvin Cook","2020s",87,"Current Era"],["Jonathan Taylor","2020s",87,"Current Era"],
+ ["Paul Hornung","1960s",86,"Steel Curtain Era"],["Ricky Williams","2000s",86,"Modern Era"],
+ ["Steven Jackson","2000s",86,"Modern Era"],["Chris Johnson","2010s",99,"Modern Era"],
+ ["Maurice Jones-Drew","2010s",86,"Modern Era"],["Arian Foster","2010s",86,"Modern Era"],
+ ["Bijan Robinson","2020s",86,"Current Era"],["Chuck Foreman","1970s",85,"Steel Curtain Era"],
+ ["Billy Sims","1980s",85,"Highlight Era"],["Ricky Watters","1990s",85,"Highlight Era"],
+ ["Brian Westbrook","2000s",85,"Modern Era"],["Matt Forte","2010s",85,"Modern Era"],
+ ["Josh Jacobs","2020s",85,"Current Era"],["Bill Dudley","1940s",84,"Leather Era"],
+ ["Floyd Little","1970s",84,"Steel Curtain Era"],["Ottis Anderson","1980s",84,"Highlight Era"],
+ ["Clinton Portis","2000s",84,"Modern Era"],["Corey Dillon","2000s",84,"Modern Era"],
+ ["Larry Johnson","2000s",84,"Modern Era"],["DeMarco Murray","2010s",84,"Modern Era"],
+ ["David Johnson","2010s",84,"Modern Era"],["Austin Ekeler","2020s",84,"Current Era"],
+ ["Breece Hall","2020s",84,"Current Era"],["William Andrews","1980s",83,"Highlight Era"],
+ ["Wilbert Montgomery","1980s",83,"Highlight Era"],["Fred Taylor","2000s",83,"Modern Era"],
+ ["Jamal Lewis","2000s",83,"Modern Era"],["Aaron Jones","2020s",83,"Current Era"],
+ ["Joe Mixon","2020s",83,"Current Era"],["Leonard Fournette","2020s",83,"Current Era"],
+ ["Jim Nance","1960s",82,"Steel Curtain Era"],["Neal Anderson","1980s",82,"Highlight Era"],
+ ["Curt Warner","1980s",82,"Highlight Era"],["Deuce McAllister","2000s",82,"Modern Era"],
+ ["Ahman Green","2000s",82,"Modern Era"],["Travis Etienne","2020s",82,"Current Era"],
+ ["James Wilder","1980s",81,"Highlight Era"],["Gerald Riggs","1980s",81,"Highlight Era"],
+ ["George Rogers","1980s",81,"Highlight Era"],["Joe Morris","1980s",81,"Highlight Era"],
+ ["Robert Smith","1990s",81,"Highlight Era"],["Jamal Anderson","1990s",81,"Highlight Era"],
+ ["Warrick Dunn","2000s",81,"Modern Era"],["Stephen Davis","2000s",81,"Modern Era"],
+ ["Kareem Hunt","2020s",81,"Current Era"],["Melvin Gordon","2020s",81,"Current Era"],
+ ["James Conner","2020s",81,"Current Era"],["Najee Harris","2020s",81,"Current Era"],
+ ["Tony Pollard","2020s",81,"Current Era"],["Lydell Mitchell","1970s",80,"Steel Curtain Era"],
+ ["Christian Okoye","1980s",80,"Highlight Era"],["Barry Foster","1990s",80,"Highlight Era"],
+ ["Terry Allen","1990s",80,"Highlight Era"],["Garrison Hearst","1990s",80,"Highlight Era"],
+ ["Willis McGahee","2000s",80,"Modern Era"],["Michael Turner","2000s",80,"Modern Era"],
+ ["Doug Martin","2010s",80,"Modern Era"],["DeAngelo Williams","2010s",80,"Modern Era"],
+ ["Natrone Means","1990s",79,"Highlight Era"],["Eddie Lacy","2010s",79,"Modern Era"],
+ ["Rudi Johnson","2000s",78,"Modern Era"]
+];
+const WRs = [
+ ["Jerry Rice","1990s",99,"Highlight Era"],["Randy Moss","2000s",99,"Modern Era"],
+ ["Calvin Johnson","2010s",99,"Modern Era"],["Tyreek Hill","2020s",99,"Current Era"],
+ ["Don Hutson","1940s",95,"Leather Era"],["Terrell Owens","2000s",99,"Modern Era"],
+ ["Larry Fitzgerald","2010s",99,"Modern Era"],["Justin Jefferson","2020s",99,"Current Era"],
+ ["Marvin Harrison","2000s",99,"Modern Era"],["Julio Jones","2010s",94,"Modern Era"],
+ ["Davante Adams","2020s",99,"Current Era"],["Antonio Brown","2010s",99,"Modern Era"],
+ ["Ja'Marr Chase","2020s",99,"Current Era"],["Lance Alworth","1960s",92,"Steel Curtain Era"],
+ ["Michael Irvin","1990s",92,"Highlight Era"],["Cris Carter","1990s",92,"Highlight Era"],
+ ["DeAndre Hopkins","2020s",99,"Current Era"],["Sterling Sharpe","1990s",92,"Highlight Era"],
+ ["Torry Holt","2000s",92,"Modern Era"],["Cooper Kupp","2020s",92,"Current Era"],
+ ["Steve Largent","1980s",91,"Highlight Era"],["Stefon Diggs","2020s",91,"Current Era"],
+ ["CeeDee Lamb","2020s",91,"Current Era"],["Odell Beckham Jr.","2010s",90,"Modern Era"],
+ ["Paul Warfield","1970s",90,"Steel Curtain Era"],["Raymond Berry","1960s",90,"Steel Curtain Era"],
+ ["James Lofton","1980s",90,"Highlight Era"],["Chad Johnson","2000s",90,"Modern Era"],
+ ["A.J. Green","2010s",90,"Modern Era"],["Mike Evans","2020s",90,"Current Era"],
+ ["A.J. Brown","2020s",90,"Current Era"],["Tim Brown","1990s",89,"Highlight Era"],
+ ["Isaac Bruce","2000s",89,"Modern Era"],["Elroy Hirsch","1950s",89,"Leather Era"],
+ ["Fred Biletnikoff","1970s",89,"Steel Curtain Era"],["John Stallworth","1980s",89,"Highlight Era"],
+ ["Herman Moore","1990s",89,"Highlight Era"],["Reggie Wayne","2000s",89,"Modern Era"],
+ ["Steve Smith Sr.","2000s",89,"Modern Era"],["Amon-Ra St. Brown","2020s",89,"Current Era"],
+ ["Art Monk","1980s",88,"Highlight Era"],["Charley Taylor","1970s",88,"Steel Curtain Era"],
+ ["Keenan Allen","2020s",88,"Current Era"],["DK Metcalf","2020s",88,"Current Era"],
+ ["Michael Thomas","2020s",99,"Current Era"],["D.K. Metcalf","2020s",88,"Current Era"],
+ ["Andre Reed","1990s",87,"Highlight Era"],["Hines Ward","2000s",87,"Modern Era"],
+ ["Garrett Wilson","2020s",87,"Current Era"],["Deebo Samuel","2020s",87,"Current Era"],
+ ["Puka Nacua","2020s",86,"Current Era"],["Jaylen Waddle","2020s",86,"Current Era"],
+ ["Henry Ellard","1990s",85,"Highlight Era"],["Roddy White","2010s",85,"Modern Era"],
+ ["Wes Welker","2010s",85,"Modern Era"],["Anquan Boldin","2010s",85,"Modern Era"],
+ ["Chris Godwin","2020s",85,"Current Era"],["Terry McLaurin","2020s",85,"Current Era"],
+ ["Tee Higgins","2020s",85,"Current Era"],["DeVonta Smith","2020s",85,"Current Era"],
+ ["Marvin Harrison Jr.","2020s",85,"Current Era"],["Brandon Aiyuk","2020s",85,"Current Era"],
+ ["Bobby Mitchell","1960s",84,"Steel Curtain Era"],["Drew Pearson","1980s",84,"Highlight Era"],
+ ["Stanley Morgan","1980s",84,"Highlight Era"],["Irving Fryar","1990s",84,"Highlight Era"],
+ ["Rod Smith","2000s",84,"Modern Era"],["Brandon Marshall","2010s",84,"Modern Era"],
+ ["Jordy Nelson","2010s",84,"Modern Era"],["T.Y. Hilton","2010s",84,"Modern Era"],
+ ["Nico Collins","2020s",84,"Current Era"],["Amari Cooper","2020s",84,"Current Era"],
+ ["Bob Hayes","1960s",84,"Steel Curtain Era"],["Gary Clark","1980s",84,"Highlight Era"],
+ ["Drake London","2020s",84,"Current Era"],["Malik Nabers","2020s",84,"Current Era"],
+ ["Otis Taylor","1970s",83,"Steel Curtain Era"],["Harold Jackson","1970s",83,"Steel Curtain Era"],
+ ["Cliff Branch","1980s",83,"Highlight Era"],["Mark Clayton","1980s",83,"Highlight Era"],
+ ["Keyshawn Johnson","2000s",83,"Modern Era"],["Vincent Jackson","2010s",83,"Modern Era"],
+ ["DeSean Jackson","2010s",83,"Modern Era"],["Demaryius Thomas","2010s",83,"Modern Era"],
+ ["Doug Baldwin","2010s",83,"Modern Era"],["Adam Thielen","2020s",83,"Current Era"],
+ ["Del Shofner","1960s",83,"Steel Curtain Era"],["Tommy McDonald","1960s",83,"Steel Curtain Era"],
+ ["Ahmad Rashad","1970s",83,"Steel Curtain Era"],["Zay Flowers","2020s",83,"Current Era"],
+ ["Muhsin Muhammad","2000s",82,"Modern Era"],["Plaxico Burress","2000s",82,"Modern Era"],
+ ["Courtland Sutton","2020s",82,"Current Era"],["Gene Washington","1970s",81,"Steel Curtain Era"],
+ ["Roy Green","1980s",81,"Highlight Era"],["Mark Duper","1980s",81,"Highlight Era"],
+ ["Isaac Curtis","1970s",81,"Steel Curtain Era"],["Anthony Carter","1980s",81,"Highlight Era"],
+ ["Joey Galloway","2000s",81,"Modern Era"],["Marquise Brown","2020s",81,"Current Era"],
+ ["Rome Odunze","2020s",81,"Current Era"],["Golden Tate","2010s",80,"Modern Era"],
+ ["Chris Chambers","2000s",80,"Modern Era"],["Santana Moss","2000s",80,"Modern Era"],
+ ["Wesley Walker","1980s",78,"Highlight Era"],["Steve Watson","1980s",78,"Highlight Era"],
+ ["Michael Jackson","1990s",78,"Highlight Era"],["Yancey Thigpen","1990s",78,"Highlight Era"],
+ ["Braylon Edwards","2000s",78,"Modern Era"]
+];
+const TEs = [
+ ["Rob Gronkowski","2010s",99,"Modern Era"],["Travis Kelce","2020s",99,"Current Era"],
+ ["Tony Gonzalez","2000s",96,"Modern Era"],["George Kittle","2020s",93,"Current Era"],
+ ["Antonio Gates","2000s",99,"Modern Era"],["Jason Witten","2010s",92,"Modern Era"],
+ ["Kellen Winslow","1980s",91,"Highlight Era"],["Shannon Sharpe","1990s",100,"Highlight Era"],
+ ["Jimmy Graham","2010s",90,"Modern Era"],["Ozzie Newsome","1980s",89,"Highlight Era"],
+ ["Mark Andrews","2020s",89,"Current Era"],["John Mackey","1960s",88,"Steel Curtain Era"],
+ ["Mike Ditka","1960s",88,"Steel Curtain Era"],["Zach Ertz","2020s",88,"Current Era"],
+ ["Dave Casper","1970s",87,"Steel Curtain Era"],["Keith Jackson","1990s",87,"Highlight Era"],
+ ["Greg Olsen","2010s",87,"Modern Era"],["Jay Novacek","1990s",86,"Highlight Era"],
+ ["Vernon Davis","2010s",86,"Modern Era"],["Darren Waller","2020s",86,"Current Era"],
+ ["Brock Bowers","2020s",86,"Current Era"],["Todd Christensen","1980s",85,"Highlight Era"],
+ ["Ben Coates","1990s",85,"Highlight Era"],["Jackie Smith","1970s",85,"Steel Curtain Era"],
+ ["Dallas Clark","2010s",85,"Modern Era"],["T.J. Hockenson","2020s",85,"Current Era"],
+ ["Trey McBride","2020s",85,"Current Era"],["Mark Bavaro","1980s",84,"Highlight Era"],
+ ["Charlie Sanders","1970s",84,"Steel Curtain Era"],["Russ Francis","1980s",84,"Highlight Era"],
+ ["Todd Heap","2000s",84,"Modern Era"],["Sam LaPorta","2020s",84,"Current Era"],
+ ["Heath Miller","2010s",84,"Modern Era"],["Delanie Walker","2010s",84,"Modern Era"],
+ ["Pete Retzlaff","1960s",83,"Steel Curtain Era"],["David Njoku","2020s",83,"Current Era"],
+ ["Evan Engram","2020s",83,"Current Era"],["Hunter Henry","2020s",83,"Current Era"],
+ ["Wesley Walls","2000s",82,"Modern Era"],["Jordan Reed","2010s",82,"Modern Era"],
+ ["Kyle Rudolph","2010s",82,"Modern Era"],["Riley Odoms","1970s",81,"Steel Curtain Era"],
+ ["Frank Wycheck","2000s",81,"Modern Era"],["Jared Cook","2010s",81,"Modern Era"],
+ ["Julius Thomas","2010s",81,"Modern Era"],["Dalton Kincaid","2020s",81,"Current Era"],
+ ["Doug Cosbie","1980s",80,"Highlight Era"],["Chad Lewis","2000s",80,"Modern Era"],
+ ["Pat Freiermuth","2020s",80,"Current Era"],["Isaiah Likely","2020s",80,"Current Era"],
+ ["Tucker Kraft","2020s",80,"Current Era"],["Owen Daniels","2010s",79,"Modern Era"],
+ ["Cole Kmet","2020s",79,"Current Era"],["Dave Logan","1980s",78,"Highlight Era"],
+ ["Dawson Knox","2020s",78,"Current Era"],["John Carlson","2010s",76,"Modern Era"],
+ ["Jack Doyle","2010s",76,"Modern Era"],["Coby Fleener","2010s",74,"Modern Era"],
+ ["Kellen Davis","2010s",73,"Modern Era"]
+];
+const DEFs = [
+ ["Lawrence Taylor","1980s",99,"Highlight Era"],["Aaron Donald","2020s",99,"Current Era"],
+ ["Reggie White","1990s",99,"Highlight Era"],["Deacon Jones","1960s",97,"Steel Curtain Era"],
+ ["Deion Sanders","1990s",100,"Highlight Era"],["Ray Lewis","2000s",99,"Modern Era"],
+ ["Dick Butkus","1960s",97,"Steel Curtain Era"],["J.J. Watt","2010s",99,"Modern Era"],
+ ["Bruce Smith","1990s",99,"Highlight Era"],["Mean Joe Greene","1970s",96,"Steel Curtain Era"],
+ ["Ronnie Lott","1980s",96,"Highlight Era"],["T.J. Watt","2020s",96,"Current Era"],
+ ["Ed Reed","2000s",99,"Modern Era"],["Chuck Bednarik","1950s",95,"Leather Era"],
+ ["Micah Parsons","2020s",95,"Current Era"],["Night Train Lane","1950s",94,"Leather Era"],
+ ["Rod Woodson","1990s",94,"Highlight Era"],["Von Miller","2010s",99,"Modern Era"],
+ ["Nick Bosa","2020s",94,"Current Era"],["Charles Woodson","2000s",93,"Modern Era"],
+ ["Champ Bailey","2000s",99,"Modern Era"],["Troy Polamalu","2000s",99,"Modern Era"],
+ ["Junior Seau","1990s",93,"Highlight Era"],["Jack Lambert","1970s",93,"Steel Curtain Era"],
+ ["Ted Hendricks","1970s",93,"Steel Curtain Era"],["Jack Ham","1970s",93,"Steel Curtain Era"],
+ ["Merlin Olsen","1970s",93,"Steel Curtain Era"],["Julius Peppers","2010s",93,"Modern Era"],
+ ["DeMarcus Ware","2010s",93,"Modern Era"],["Luke Kuechly","2020s",99,"Current Era"],
+ ["Michael Strahan","2000s",92,"Modern Era"],["Derrick Thomas","1990s",92,"Highlight Era"],
+ ["Bob Lilly","1960s",92,"Steel Curtain Era"],["Alan Page","1970s",92,"Steel Curtain Era"],
+ ["Mike Singletary","1980s",92,"Highlight Era"],["Darrelle Revis","2010s",99,"Modern Era"],
+ ["Khalil Mack","2020s",99,"Current Era"],["Sam Huff","1960s",92,"Steel Curtain Era"],
+ ["Willie Lanier","1970s",92,"Steel Curtain Era"],["Warren Sapp","2000s",99,"Modern Era"],
+ ["Jason Taylor","2010s",92,"Modern Era"],["Patrick Willis","2010s",99,"Modern Era"],
+ ["Brian Urlacher","2010s",99,"Modern Era"],["Chris Jones","2020s",92,"Current Era"],
+ ["Maxx Crosby","2020s",92,"Current Era"],["Fred Warner","2020s",92,"Current Era"],
+ ["Bobby Wagner","2020s",99,"Current Era"],["Randy White","1970s",91,"Steel Curtain Era"],
+ ["Myles Garrett","2020s",99,"Current Era"],["Earl Thomas","2010s",91,"Modern Era"],
+ ["Patrick Peterson","2010s",90,"Modern Era"],["Ernie Stautner","1950s",90,"Leather Era"],
+ ["Carl Eller","1970s",90,"Steel Curtain Era"],["Willie Brown","1970s",90,"Steel Curtain Era"],
+ ["Jack Youngblood","1970s",90,"Steel Curtain Era"],["Kenny Easley","1980s",90,"Highlight Era"],
+ ["John Randle","1990s",90,"Highlight Era"],["Terrell Suggs","2010s",90,"Modern Era"],
+ ["Jared Allen","2010s",99,"Modern Era"],["Richard Sherman","2010s",99,"Modern Era"],
+ ["Jalen Ramsey","2020s",99,"Current Era"],["Patrick Surtain II","2020s",90,"Current Era"],
+ ["L.C. Greenwood","1970s",89,"Steel Curtain Era"],["Herb Adderley","1960s",89,"Steel Curtain Era"],
+ ["Mel Renfro","1970s",89,"Steel Curtain Era"],["Howie Long","1980s",89,"Highlight Era"],
+ ["Chris Doleman","1990s",89,"Highlight Era"],["Cortez Kennedy","1990s",89,"Highlight Era"],
+ ["Darrell Green","1990s",89,"Highlight Era"],["Roquan Smith","2020s",89,"Current Era"],
+ ["Sauce Gardner","2020s",89,"Current Era"],["Derwin James","2020s",89,"Current Era"],
+ ["Cliff Harris","1970s",88,"Steel Curtain Era"],["Emlen Tunnell","1950s",88,"Leather Era"],
+ ["Harry Carson","1980s",88,"Highlight Era"],["Andre Tippett","1980s",88,"Highlight Era"],
+ ["Kevin Greene","1990s",88,"Highlight Era"],["James Harrison","2010s",88,"Modern Era"],
+ ["Zach Thomas","2000s",88,"Modern Era"],["Eric Berry","2010s",88,"Modern Era"],
+ ["Kam Chancellor","2010s",88,"Modern Era"],["Harrison Smith","2020s",88,"Current Era"],
+ ["Fletcher Cox","2020s",88,"Current Era"],["Antoine Winfield Jr.","2020s",88,"Current Era"],
+ ["Quinnen Williams","2020s",88,"Current Era"],["Jim Marshall","1970s",87,"Steel Curtain Era"],
+ ["Randy Gradishar","1980s",87,"Highlight Era"],["Rickey Jackson","1980s",87,"Highlight Era"],
+ ["Aeneas Williams","2000s",87,"Modern Era"],["Clay Matthews III","2010s",87,"Modern Era"],
+ ["Tyrann Mathieu","2020s",87,"Current Era"],["Stephon Gilmore","2020s",99,"Current Era"],
+ ["Cameron Heyward","2020s",87,"Current Era"],["Cameron Jordan","2020s",87,"Current Era"],
+ ["Demario Davis","2020s",87,"Current Era"],["Budda Baker","2020s",87,"Current Era"],
+ ["DeForest Buckner","2020s",87,"Current Era"],["Curley Culp","1970s",86,"Steel Curtain Era"],
+ ["Lester Hayes","1980s",86,"Highlight Era"],["Steve Atwater","1990s",86,"Highlight Era"],
+ ["Bryant Young","2000s",86,"Modern Era"],["NaVorro Bowman","2010s",86,"Modern Era"],
+ ["Antoine Winfield","2000s",86,"Modern Era"],["Nnamdi Asomugha","2010s",99,"Modern Era"],
+ ["Yale Lary","1950s",85,"Leather Era"],["LeRoy Butler","1990s",85,"Highlight Era"],
+ ["Robert Mathis","2010s",85,"Modern Era"],["Asante Samuel","2010s",85,"Modern Era"],
+ ["Marlon Humphrey","2020s",85,"Current Era"],["Dick LeBeau","1960s",84,"Steel Curtain Era"],
+ ["Bruce Matthews","1990s",84,"Highlight Era"],["Sam Mills","1990s",84,"Highlight Era"],
+ ["Seth Joyner","1990s",84,"Highlight Era"],["Tim McDonald","1990s",84,"Highlight Era"],
+ ["La'Roi Glover","2000s",84,"Modern Era"],["Elvis Dumervil","2010s",84,"Modern Era"],
+ ["London Fletcher","2010s",84,"Modern Era"],["Devin McCourty","2020s",84,"Current Era"],
+ ["Xavien Howard","2020s",84,"Current Era"],["Justin Tuck","2010s",83,"Modern Era"],
+ ["Marcus Peters","2020s",83,"Current Era"],["Trevon Diggs","2020s",83,"Current Era"],
+ ["Eugene Robinson","1990s",82,"Highlight Era"],["Michael Sinclair","1990s",81,"Highlight Era"],
+ ["Brandon Flowers","2010s",81,"Modern Era"],["Foyesade Oluokun","2020s",81,"Current Era"]
+];
+const COACHES = [
+ ["Vince Lombardi","1960s",99,"Steel Curtain Era"],["Bill Belichick","2000s",98,"Modern Era"],
+ ["Don Shula","1970s",96,"Steel Curtain Era"],["Bill Walsh","1980s",97,"Highlight Era"],
+ ["Chuck Noll","1970s",94,"Steel Curtain Era"],["Tom Landry","1970s",94,"Steel Curtain Era"],
+ ["George Halas","1940s",92,"Leather Era"],["Paul Brown","1950s",95,"Leather Era"],
+ ["Joe Gibbs","1980s",92,"Highlight Era"],["Bill Parcells","1990s",91,"Highlight Era"],
+ ["Andy Reid","2020s",93,"Current Era"],["Sean McVay","2020s",90,"Current Era"],
+ ["Mike Tomlin","2010s",89,"Modern Era"],["John Madden","1970s",91,"Steel Curtain Era"],
+ ["Marv Levy","1990s",87,"Highlight Era"],["Dan Reeves","1980s",85,"Highlight Era"]
+];
+const TEAMDEFs = [
+ ["1962 Green Bay Packers Defense","1960s",95,"Steel Curtain Era"],
+ ["1976 Pittsburgh Steel Curtain","1970s",97,"Steel Curtain Era"],
+ ["1970s LA Rams Fearsome Foursome","1970s",94,"Steel Curtain Era"],
+ ["1985 Chicago Bears Defense","1980s",99,"Highlight Era"],
+ ["1986 New York Giants Defense","1980s",95,"Highlight Era"],
+ ["1990 New York Giants Defense","1990s",94,"Highlight Era"],
+ ["1991 Philadelphia Eagles Defense","1990s",93,"Highlight Era"],
+ ["2000 Baltimore Ravens Defense","2000s",98,"Modern Era"],
+ ["2002 Tampa Bay Buccaneers Defense","2000s",96,"Modern Era"],
+ ["2008 Pittsburgh Steelers Defense","2000s",93,"Modern Era"],
+ ["2012 Chicago Bears Defense","2010s",90,"Modern Era"],
+ ["2013 Seattle Seahawks Legion of Boom","2010s",97,"Modern Era"],
+ ["2015 Denver Broncos No Fly Zone","2010s",95,"Modern Era"],
+ ["2022 San Francisco 49ers Defense","2020s",93,"Current Era"],
+ ["2024 Baltimore Ravens Defense","2020s",92,"Current Era"],
+ ["2025 Seattle Seahawks Defense","2020s",90,"Current Era"]
+];
+
+function toObjs(arr,pos){
+  return arr.map(([name,era,ovr,bucket])=>({name,pos,era,ovr,bucket,id:name+"-"+pos}));
+}
+const POOLS_SEED = {
+  QB: toObjs(QBs,"QB"), RB: toObjs(RBs,"RB"), WR: toObjs(WRs,"WR"),
+  TE: toObjs(TEs,"TE"), DEFENSE: toObjs(DEFs,"DEFENSE"), COACH: toObjs(COACHES,"COACH"),
+  TEAMDEF: toObjs(TEAMDEFs,"TEAMDEF")
+};
+
+function avgOvr(arr){ return arr.reduce((s,p)=>s+p.ovr,0)/arr.length; }
+const POSITION_AVG_OVR = {};
+for(const k in POOLS_SEED){ POSITION_AVG_OVR[k] = avgOvr(POOLS_SEED[k]); }
+
+/* Position definitions: how many of each a full roster needs. */
+const POSITIONS = [
+  {pos:"QB", label:"Quarterback", need:1},
+  {pos:"RB", label:"Running Back", need:1},
+  {pos:"WR", label:"Wide Receiver", need:2},
+  {pos:"TE", label:"Tight End", need:1},
+  {pos:"DEFENSE", label:"Defensive Anchor", need:1},
+  {pos:"TEAMDEF", label:"Team Defense", need:1},
+  {pos:"COACH", label:"Head Coach", need:1}
+];
+const TOTAL_SLOTS = POSITIONS.reduce((s,p)=>s+p.need,0); // 8
+const SLOT_WEIGHT = {QB:1.3, RB:1.0, WR:0.95, TE:0.85, DEFENSE:1.3, TEAMDEF:1.2, COACH:1.0};
+
+/* =====================================================================
+   AVATAR ICONS — stylized position glyphs, not real photos. Using
+   actual player/team photography here would raise copyright and
+   likeness issues, so every card gets a simple era-tinted icon instead.
+===================================================================== */
+const POS_ICON = {
+  QB: `<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/><path d="M9 7.5h6M9 9.5h6"/>`,
+  RB: `<path d="M5 18l4-5 3 2 3-6 4 3"/><circle cx="17" cy="6" r="2.2"/>`,
+  WR: `<path d="M4 15.5c4-2 6-2 8 0M4 11.5c4-2 6-2 8 0"/><circle cx="17.5" cy="8" r="2.6"/>`,
+  TE: `<rect x="6" y="6" width="12" height="14" rx="2"/><circle cx="12" cy="4" r="2"/>`,
+  DEFENSE: `<path d="M12 3l7 3v6c0 5-3.5 8-7 9-3.5-1-7-4-7-9V6l7-3z"/>`,
+  TEAMDEF: `<path d="M12 2l8 3v7c0 6-4 9.5-8 10-4-.5-8-4-8-10V5l8-3z"/><path d="M8.2 12l2.6 2.6 5-5.2"/>`,
+  COACH: `<circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.5-6.5 8-6.5s8 2.5 8 6.5"/><path d="M6.2 8a5.8 5.8 0 0111.6 0"/>`
+};
+const BUCKET_COLOR = {
+  "Leather Era":"#93a6c2", "Steel Curtain Era":"#4f8ef7",
+  "Highlight Era":"#38bdf8", "Modern Era":"#818cf8", "Current Era":"#22d3ee"
+};
+function avatarSVG(pos, bucket){
+  const color = BUCKET_COLOR[bucket] || "#4f8ef7";
+  const glyph = POS_ICON[pos] || POS_ICON.DEFENSE;
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${glyph}</svg>`;
+}
+
+/* =====================================================================
+   STATE
+===================================================================== */
+let state = {};
+
+function freshPools(){
+  const copy = {};
+  for(const k in POOLS_SEED){ copy[k] = POOLS_SEED[k].map(p=>({...p})); }
+  return copy;
+}
+function emptyRoster(){
+  return {QB:null, RB:null, WR:[], TE:null, DEFENSE:null, TEAMDEF:null, COACH:null};
+}
+const MAX_SKIPS = 3;
+const BID_INCREMENTS = [1,3,5];
+function resetState(){
+  state = {
+    pools: freshPools(),
+    filledCount: 0,
+    userBudget: 200,
+    aiBudget: 200,
+    userRoster: emptyRoster(),
+    aiRoster: emptyRoster(),
+    current: null,
+    filledOrder: [],
+    userSkips: 0,
+    aiSkips: 0
+  };
+}
+
+function updateSkipDisplays(){
+  const uLeft = Math.max(0, MAX_SKIPS - state.userSkips);
+  const aLeft = Math.max(0, MAX_SKIPS - state.aiSkips);
+  $("user-skip-count").textContent = `${uLeft} skip${uLeft===1?'':'s'} left`;
+  $("ai-skip-count").textContent = `${aLeft} skip${aLeft===1?'':'s'} left`;
+}
+
+function rand(min,max){ return Math.random()*(max-min)+min; }
+function ri(min,max){ return Math.floor(rand(min,max+1)); }
+function pickRandom(arr){ return arr[ri(0,arr.length-1)]; }
+
+function userNeed(pos){ return pos==="WR" ? (2 - state.userRoster.WR.length) : (state.userRoster[pos] ? 0 : 1); }
+function aiNeed(pos){ return pos==="WR" ? (2 - state.aiRoster.WR.length) : (state.aiRoster[pos] ? 0 : 1); }
+function totalUserNeed(){ return POSITIONS.reduce((s,P)=>s+userNeed(P.pos),0); }
+function totalAiNeed(){ return POSITIONS.reduce((s,P)=>s+aiNeed(P.pos),0); }
+
+/* =====================================================================
+   SCREEN HELPERS
+===================================================================== */
+const $ = id => document.getElementById(id);
+function show(id){ $(id).classList.remove("hidden"); }
+function hide(id){ $(id).classList.add("hidden"); }
+
+function buildYardTrack(){
+  const track = $("yardtrack");
+  track.innerHTML = "";
+  for(let i=0;i<TOTAL_SLOTS;i++){
+    const div = document.createElement("div");
+    div.className = "marker";
+    div.id = "marker-"+i;
+    div.innerHTML = `<div class="num">${(i+1)*10}</div><div id="marker-label-${i}">—</div>`;
+    track.appendChild(div);
+  }
+  updateYardTrack();
+}
+function updateYardTrack(){
+  for(let i=0;i<TOTAL_SLOTS;i++){
+    const m = $("marker-"+i);
+    m.classList.remove("done","active");
+    if(i < state.filledCount){
+      m.classList.add("done");
+      const fo = state.filledOrder[i];
+      if(fo) $("marker-label-"+i).textContent = fo.pos;
+    } else if(i === state.filledCount){
+      m.classList.add("active");
+      $("marker-label-"+i).textContent = "?";
+    } else {
+      $("marker-label-"+i).textContent = "—";
+    }
+  }
+}
+
+function renderNeeds(){
+  const wrap = $("needs-list");
+  wrap.innerHTML = "";
+  POSITIONS.forEach(P=>{
+    const have = P.need - userNeed(P.pos);
+    const chip = document.createElement("div");
+    chip.className = "need-chip" + (have>=P.need ? " filled" : "");
+    let dots = "";
+    for(let i=0;i<P.need;i++){ dots += `<span class="dot ${i<have?'on':''}"></span>`; }
+    chip.innerHTML = `${dots}<span>${P.label}${P.need>1 ? " ("+have+"/"+P.need+")" : ""}</span>`;
+    wrap.appendChild(chip);
+  });
+}
+
+/* =====================================================================
+   DRAFT FLOW
+===================================================================== */
+function startDraft(){
+  resetState();
+  hide("screen-setup"); hide("screen-roster"); hide("screen-result"); hide("screen-history");
+  show("screen-draft");
+  buildYardTrack();
+  renderNeeds();
+  $("user-budget").textContent = state.userBudget;
+  $("ai-budget").textContent = state.aiBudget;
+  updateSkipDisplays();
+  $("bid-log").innerHTML = "";
+  nextRound();
+}
+
+function logBid(text, cls){
+  const log = $("bid-log");
+  const div = document.createElement("div");
+  if(cls) div.className = cls;
+  div.textContent = text;
+  log.prepend(div);
+}
+
+function drawablePlayers(){
+  const list = [];
+  POSITIONS.forEach(P=>{
+    if(userNeed(P.pos) > 0 || aiNeed(P.pos) > 0){
+      state.pools[P.pos].forEach(p=> list.push(p));
+    }
+  });
+  return list;
+}
+function removeFromPool(pos, id){
+  state.pools[pos] = state.pools[pos].filter(p=>p.id!==id);
+}
+
+function nextRound(){
+  updateYardTrack();
+  renderNeeds();
+  $("user-budget").textContent = state.userBudget;
+  $("ai-budget").textContent = state.aiBudget;
+
+  if(totalUserNeed() === 0){
+    finishDraftGoToRoster();
+    return;
+  }
+
+  const pool = drawablePlayers();
+  if(pool.length === 0){
+    finishDraftGoToRoster();
+    return;
+  }
+
+  const player = pickRandom(pool);
+  removeFromPool(player.pos, player.id);
+
+  const uCan = userNeed(player.pos) > 0;
+  const aCan = aiNeed(player.pos) > 0;
+
+  state.current = {player, current: 1, holder: null};
+
+  $("bid-pname").textContent = player.name;
+  $("bid-pmeta").textContent = `${player.pos === "TEAMDEF" ? "TEAM DEF" : player.pos} · ${player.era} · ${player.bucket}`;
+  $("bid-povr").textContent = player.ovr;
+  $("bid-avatar").innerHTML = avatarSVG(player.pos, player.bucket);
+
+  if(uCan && aCan){
+    renderContestedScenario(player);
+  } else if(uCan && !aCan){
+    renderUserOnlyScenario(player);
+  } else {
+    renderAiOnlyScenario(player);
+  }
+}
+
+/* ---------------------------------------------------------------------
+   Smarter AI valuation: paces spending across every remaining need,
+   weighted by positional importance, and scales up for above-average
+   talent instead of a flat percentage of whatever's left in the bank.
+--------------------------------------------------------------------- */
+function aiMaxWillingness(player){
+  const pos = player.pos;
+  const weight = SLOT_WEIGHT[pos] || 1;
+  let remainingWeightSum = 0;
+  POSITIONS.forEach(P=>{
+    const need = aiNeed(P.pos);
+    if(need > 0) remainingWeightSum += need * (SLOT_WEIGHT[P.pos]||1);
+  });
+  if(remainingWeightSum <= 0) remainingWeightSum = weight;
+
+  const reserveAfter = totalAiNeed() - 1; // $1 minimum held back per other open need
+  const spendable = Math.max(0, state.aiBudget - reserveAfter);
+  const share = weight / remainingWeightSum;
+  const target = spendable * share;
+
+  const avg = POSITION_AVG_OVR[pos] || 85;
+  const qualityFactor = Math.max(0.5, Math.min(1.6, 0.7 + (player.ovr - avg)/25));
+  let willing = target * qualityFactor;
+
+  // Value-over-replacement: check what's still sitting in the pool at this
+  // spot before deciding how much this particular player is worth chasing.
+  const bestAlt = bestAvailableOvr(pos);
+  if(bestAlt === 0){
+    // Last one of its kind left in the pool — don't let it go for pennies.
+    willing *= 1.18;
+  } else if(bestAlt >= player.ovr - 2){
+    // A comparable (or better) option is still on the board — no rush to overpay.
+    willing *= 0.88;
+  }
+
+  // Scarcity: weigh remaining need at this spot (across both teams) against
+  // how many bodies are actually left in the pool to fill it.
+  const scarcity = positionScarcity(pos);
+  if(scarcity >= 1.2){
+    willing *= 1.12;
+  } else if(scarcity <= 0.5){
+    willing *= 0.92;
+  }
+
+  willing = Math.min(willing, spendable);
+  return Math.max(1, Math.round(willing));
+}
+
+/* Best remaining overall rating still sitting in the pool at this position
+   (0 if nobody else is left there). */
+function bestAvailableOvr(pos){
+  const pool = state.pools[pos] || [];
+  let best = 0;
+  pool.forEach(p=>{ if(p.ovr > best) best = p.ovr; });
+  return best;
+}
+
+/* Combined remaining need (user + rival) at a position vs. players still
+   available there. >1 means more mouths to feed than bodies left. */
+function positionScarcity(pos){
+  const poolCount = (state.pools[pos] || []).length;
+  const need = userNeed(pos) + aiNeed(pos);
+  if(poolCount <= 0) return need > 0 ? 99 : 0;
+  return need / poolCount;
+}
+
+/* Most the user could still legally raise to right now, given their
+   budget and other open needs reserved at $1 each. */
+function userMaxAllowedNow(){
+  return state.userBudget - (totalUserNeed()-1);
+}
+
+/* ---------------------------------------------------------------------
+   Scenario: both sides still need this position — full bidding war.
+--------------------------------------------------------------------- */
+function renderContestedScenario(player){
+  $("onclock-label").textContent = "ON THE CLOCK — " + (player.pos === "TEAMDEF" ? "TEAM DEFENSE" : player.pos);
+  const area = $("bid-action-area");
+  area.innerHTML = `
+    <div class="label">Current Bid</div>
+    <div class="amt mono">$<span id="current-bid-amt">1</span></div>
+    <div class="holder" id="current-bid-holder">No bids yet</div>
+    <div class="bid-controls">
+      <button class="btn" id="btn-bid-1" data-inc="1">+$1</button>
+      <button class="btn" id="btn-bid-3" data-inc="3">+$3</button>
+      <button class="btn" id="btn-bid-5" data-inc="5">+$5</button>
+      <button class="btn secondary" id="btn-pass">Skip</button>
+    </div>
+  `;
+  BID_INCREMENTS.forEach(inc=>{
+    $("btn-bid-"+inc).addEventListener("click", ()=> placeUserBid(inc));
+  });
+  updateBidButtons();
+  $("btn-pass").disabled = state.userSkips >= MAX_SKIPS;
+  if(state.userSkips >= MAX_SKIPS){
+    $("btn-pass").title = "You're out of skips — you have to bid.";
+  }
+  $("btn-pass").addEventListener("click", userSkipContested);
+}
+
+/* Enable/disable each +$ bid button based on how much of the user's
+   budget is actually available to spend once every other open need
+   is reserved a minimum of $1. */
+function updateBidButtons(){
+  const b = state.current;
+  if(!b) return;
+  const maxAllowed = state.userBudget - (totalUserNeed()-1);
+  BID_INCREMENTS.forEach(inc=>{
+    const btn = $("btn-bid-"+inc);
+    if(btn) btn.disabled = (b.current + inc) > maxAllowed;
+  });
+}
+
+function placeUserBid(inc){
+  const b = state.current;
+  const maxAllowed = state.userBudget - (totalUserNeed()-1);
+  const amt = b.current + inc;
+  if(amt > maxAllowed) return;
+  b.current = amt; b.holder = "you";
+  $("current-bid-amt").textContent = amt;
+  $("current-bid-holder").textContent = "You are the high bid";
+  logBid(`You bid $${amt} on ${b.player.name}.`, "gold-txt");
+  BID_INCREMENTS.forEach(i=>{ const el=$("btn-bid-"+i); if(el) el.disabled = true; });
+  $("btn-pass").disabled = true;
+  setTimeout(aiRespond, 650);
+}
+
+function userSkipContested(){
+  const b = state.current;
+  if(b.holder === "ai"){
+    awardToAi(b.player, b.current, "fold");
+    return;
+  }
+  if(state.userSkips >= MAX_SKIPS) return; // button should already be disabled
+  state.userSkips += 1;
+  updateSkipDisplays();
+  logBid(`You skip ${b.player.name}. (${MAX_SKIPS - state.userSkips} skips left)`, "dim-txt");
+  BID_INCREMENTS.forEach(i=>{ const el=$("btn-bid-"+i); if(el) el.disabled = true; });
+  $("btn-pass").disabled = true;
+  setTimeout(()=> resolveAiUncontested(b.player, true), 500);
+}
+
+function aiRespond(){
+  const b = state.current;
+  const player = b.player;
+  const willing = aiMaxWillingness(player);
+  const reserveAfter = totalAiNeed() - 1;
+  const canBid = (state.aiBudget - reserveAfter) > b.current;
+
+  if(willing > b.current && canBid){
+    const cap = state.aiBudget - reserveAfter;
+    const inc = aiCounterIncrement(player, willing, b.current);
+    const counter = Math.min(b.current + inc, willing, cap);
+    if(counter <= b.current){ aiPassesContested(); return; }
+    b.current = counter; b.holder = "ai";
+    $("current-bid-amt").textContent = counter;
+    $("current-bid-holder").textContent = "Rival GM is the high bid";
+    logBid(`Rival GM counters with $${counter}.`, "rust-txt");
+    BID_INCREMENTS.forEach(i=>{ const el=$("btn-bid-"+i); if(el) el.disabled = false; });
+    updateBidButtons();
+    $("btn-pass").disabled = false;
+  } else {
+    aiPassesContested();
+  }
+}
+
+/* ---------------------------------------------------------------------
+   Decide how hard to raise, in the same $1/$3/$5 increments the user
+   bids in, instead of a random jump. The Rival GM raises the minimum
+   when it can afford to wait, and jumps harder when the player is a
+   clear step up at a scarce spot or the user looks nearly tapped out.
+--------------------------------------------------------------------- */
+function aiCounterIncrement(player, willing, current){
+  const gap = willing - current;
+  if(gap <= 0) return 0;
+  const avg = POSITION_AVG_OVR[player.pos] || 85;
+  const valueGap = player.ovr - avg;
+  const scarce = positionScarcity(player.pos) >= 1.1;
+  const userHeadroom = userMaxAllowedNow() - current;
+
+  // The user is nearly out of room to keep raising — win it as cheaply as possible.
+  if(userHeadroom <= 1) return Math.min(1, gap);
+  // Clear step-up talent at a spot with more mouths to feed than bodies left —
+  // press the advantage and try to close the auction out early.
+  if(scarce && valueGap > 4) return Math.min(5, gap);
+  if(valueGap > 8) return Math.min(5, gap);
+  if(scarce || valueGap > 3) return Math.min(3, gap);
+  // Otherwise, raise the minimum and conserve budget for future needs.
+  return Math.min(1, gap);
+}
+
+function aiPassesContested(){
+  const b = state.current;
+  logBid(`Rival GM passes.`, "rust-txt");
+  awardToUser(b.player, Math.max(1,b.current));
+}
+
+/* ---------------------------------------------------------------------
+   Scenario: only you still need this position — no competing bidder.
+--------------------------------------------------------------------- */
+function renderUserOnlyScenario(player){
+  $("onclock-label").textContent = "ON THE CLOCK — " + (player.pos === "TEAMDEF" ? "TEAM DEFENSE" : player.pos) + " (no rival interest)";
+  const price = Math.max(1, Math.round(player.ovr*0.15));
+  const area = $("bid-action-area");
+  area.innerHTML = `
+    <div class="label">No Rival Competition</div>
+    <div class="amt mono">$<span>${price}</span></div>
+    <div class="holder">The Rival GM already has this position — it's yours if you want it.</div>
+    <div class="bid-controls">
+      <button class="btn" id="btn-sign">Sign for $${price}</button>
+      <button class="btn secondary" id="btn-skip-uo"${state.userSkips>=MAX_SKIPS ? " disabled title=\"You're out of skips — you have to sign.\"" : ""}>Skip</button>
+    </div>
+  `;
+  $("btn-sign").addEventListener("click", ()=> awardToUser(player, price));
+  $("btn-skip-uo").addEventListener("click", ()=>{
+    if(state.userSkips >= MAX_SKIPS) return;
+    state.userSkips += 1;
+    updateSkipDisplays();
+    logBid(`You skip ${player.name} (uncontested). (${MAX_SKIPS - state.userSkips} skips left)`, "dim-txt");
+    setTimeout(nextRound, 400);
+  });
+}
+
+/* ---------------------------------------------------------------------
+   Scenario: only the rival still needs this position — you can't bid.
+--------------------------------------------------------------------- */
+function renderAiOnlyScenario(player){
+  $("onclock-label").textContent = "ON THE CLOCK — " + (player.pos === "TEAMDEF" ? "TEAM DEFENSE" : player.pos) + " (you're set at this spot)";
+  const area = $("bid-action-area");
+  area.innerHTML = `
+    <div class="label">You already have this position filled</div>
+    <div class="holder" id="ao-result">The Rival GM is deciding...</div>
+    <div class="bid-controls">
+      <button class="btn" id="btn-continue" disabled>Continue</button>
+    </div>
+  `;
+  setTimeout(()=>{
+    const wanted = resolveAiUncontested(player, false);
+    $("ao-result").textContent = wanted
+      ? `Rival GM signs ${player.name}.`
+      : `Rival GM passes on ${player.name} — no deal.`;
+    const cont = $("btn-continue");
+    cont.disabled = false;
+    cont.addEventListener("click", nextRound);
+  }, 700);
+}
+
+/* Shared logic for an uncontested decision by the rival GM, now using
+   the same budget-paced valuation as the live bidding war. */
+function resolveAiUncontested(player, thenAdvance){
+  const willing = aiMaxWillingness(player);
+  const price = Math.max(1, Math.round(willing * 0.35));
+  const avg = POSITION_AVG_OVR[player.pos] || 85;
+  const interestChance = Math.max(0.15, Math.min(0.95, 0.5 + (player.ovr-avg)/40));
+  const reserve = totalAiNeed() - 1;
+  const canAfford = (state.aiBudget - reserve) >= price;
+  let wants = Math.random() < interestChance && canAfford && aiNeed(player.pos) > 0;
+  // Rival GM is capped at the same number of skips — forced to sign once out, budget permitting.
+  if(!wants && canAfford && aiNeed(player.pos) > 0 && state.aiSkips >= MAX_SKIPS){
+    wants = true;
+  }
+  if(wants){
+    state.aiBudget -= price;
+    assignToRoster(state.aiRoster, player, price);
+    logBid(`Rival GM quietly signs ${player.name} for $${price}.`, "rust-txt");
+  } else {
+    state.aiSkips += 1;
+    logBid(`${player.name} goes undrafted this round. (Rival has ${MAX_SKIPS-state.aiSkips} skips left)`, "dim-txt");
+  }
+  updateSkipDisplays();
+  if(thenAdvance) setTimeout(nextRound, 500);
+  return wants;
+}
+
+function assignToRoster(roster, player, price){
+  const entry = {...player, price};
+  if(player.pos === "WR"){ roster.WR.push(entry); }
+  else { roster[player.pos] = entry; }
+}
+
+function awardToUser(player, price){
+  state.userBudget -= price;
+  assignToRoster(state.userRoster, player, price);
+  state.filledCount += 1;
+  state.filledOrder.push({pos:player.pos, name:player.name});
+  logBid(`SOLD — you win ${player.name} for $${price}.`, "gold-txt");
+  setTimeout(nextRound, 800);
+}
+
+function awardToAi(player, price, reason){
+  state.aiBudget -= price;
+  assignToRoster(state.aiRoster, player, price);
+  const msg = reason === "fold"
+    ? `You fold — Rival GM takes ${player.name} for $${price}.`
+    : `Rival GM wins ${player.name} for $${price}.`;
+  logBid(msg, "rust-txt");
+  setTimeout(nextRound, 800);
+}
+
+/* =====================================================================
+   ROSTER REVIEW
+===================================================================== */
+function finishDraftGoToRoster(){
+  POSITIONS.forEach(P=>{
+    let need = aiNeed(P.pos);
+    while(need > 0){
+      const pool = state.pools[P.pos];
+      if(!pool.length) break;
+      const p = pickRandom(pool);
+      removeFromPool(P.pos, p.id);
+      assignToRoster(state.aiRoster, p, 1);
+      need -= 1;
+    }
+  });
+
+  hide("screen-draft"); show("screen-roster");
+  renderRosterColumn("roster-user", state.userRoster);
+  renderRosterColumn("roster-ai", state.aiRoster);
+}
+
+function rosterRows(roster){
+  return [
+    ["QB", roster.QB],
+    ["RB", roster.RB],
+    ["WR", roster.WR[0]||null],
+    ["WR", roster.WR[1]||null],
+    ["TE", roster.TE],
+    ["DEF", roster.DEFENSE],
+    ["TEAM D", roster.TEAMDEF],
+    ["HC", roster.COACH]
+  ];
+}
+
+function renderRosterColumn(elId, roster){
+  const el = $(elId);
+  el.innerHTML = "";
+  rosterRows(roster).forEach(([label,p])=>{
+    const row = document.createElement("div");
+    row.className = "roster-row" + (p ? "" : " empty");
+    row.innerHTML = p
+      ? `<div class="slot">${label}</div><div class="nm-wrap"><div class="avatar-sm">${avatarSVG(p.pos,p.bucket)}</div><div class="nm">${p.name}</div></div><div class="ov">${p.ovr}</div>`
+      : `<div class="slot">${label}</div><div class="nm-wrap"><div class="nm">— empty —</div></div><div class="ov">--</div>`;
+    el.appendChild(row);
+  });
+}
+
+/* =====================================================================
+   SIMULATION
+===================================================================== */
+function teamPower(roster){
+  const qb = roster.QB, rb = roster.RB, w1 = roster.WR[0], w2 = roster.WR[1],
+        te = roster.TE, def = roster.DEFENSE, teamdef = roster.TEAMDEF, coach = roster.COACH;
+  const base = (qb?.ovr||60)*SLOT_WEIGHT.QB + (rb?.ovr||60)*SLOT_WEIGHT.RB +
+               (w1?.ovr||60)*SLOT_WEIGHT.WR + (w2?.ovr||60)*0.9 +
+               (te?.ovr||60)*SLOT_WEIGHT.TE + (def?.ovr||60)*SLOT_WEIGHT.DEFENSE +
+               (teamdef?.ovr||60)*SLOT_WEIGHT.TEAMDEF;
+  const coachMult = 1 + (((coach?.ovr)||85) - 90)/200;
+
+  const buckets = [qb,rb,w1,w2,te,def,teamdef].filter(Boolean).map(p=>p.bucket);
+  const counts = {};
+  buckets.forEach(b=> counts[b] = (counts[b]||0)+1);
+  const maxCount = Math.max(0,...Object.values(counts));
+  let synergy = (maxCount-1) * 4;
+  if(coach && buckets.includes(coach.bucket)) synergy += 5;
+
+  return base*coachMult + synergy;
+}
+
+function simulateGame(){
+  const uPower = teamPower(state.userRoster);
+  const aPower = teamPower(state.aiRoster);
+  const diff = uPower - aPower;
+  const spread = Math.max(-15, Math.min(15, diff/6));
+  const base = 23;
+  let userScore = Math.round(base + spread/2 + rand(-6,6));
+  let aiScore = Math.round(base - spread/2 + rand(-6,6));
+  userScore = Math.max(3, userScore);
+  aiScore = Math.max(3, aiScore);
+  if(userScore === aiScore){
+    if(uPower >= aPower) userScore += 3; else aiScore += 3;
+  }
+  const uQ = splitIntoQuarters(userScore);
+  const aQ = splitIntoQuarters(aiScore);
+  return {userScore, aiScore, uQ, aQ, uPower, aPower};
+}
+
+function splitIntoQuarters(total){
+  if(total <= 0) return [0,0,0,0];
+  let remaining = total;
+  const parts = [];
+  for(let i=0;i<3;i++){
+    const take = Math.min(remaining, ri(0, Math.ceil(total/2)));
+    parts.push(take);
+    remaining -= take;
+  }
+  parts.push(Math.max(0,remaining));
+  return parts;
+}
+
+const RECAP_ADJ = ["dominant","surgical","relentless","clutch","suffocating","electric"];
+const RECAP_D = ["bent but never broke","forced the issue all afternoon","controlled the line of scrimmage","turned the game with one big stop"];
+
+function buildRecap(result){
+  const won = result.userScore > result.aiScore;
+  const qb = state.userRoster.QB?.name || "Your quarterback";
+  const def = state.userRoster.DEFENSE?.name || "Your defense";
+  const coach = state.userRoster.COACH?.name || "Your coach";
+  const adj = RECAP_ADJ[ri(0,RECAP_ADJ.length-1)];
+  const dline = RECAP_D[ri(0,RECAP_D.length-1)];
+  const margin = Math.abs(result.userScore - result.aiScore);
+  let closeText = margin <= 4 ? "a nail-biter decided in the final minutes" : (margin >= 14 ? "a statement win from start to finish" : "a hard-fought result");
+  if(won){
+    return `<b>${qb}</b> was ${adj} under center, and <b>${def}</b> ${dline} on the other side. With <b>${coach}</b> calling the shots, your all-era roster pulls off ${closeText}, ${result.userScore}-${result.aiScore}.`;
+  } else {
+    return `Despite ${adj} moments from <b>${qb}</b>, the Rival GM's roster found enough answers late. <b>${def}</b> ${dline}, but it wasn't quite enough in ${closeText}. Final: ${result.aiScore}-${result.userScore} Rival.`;
+  }
+}
+
+/* ---------------------------------------------------------------------
+   Speculative box score generation
+--------------------------------------------------------------------- */
+/* Turnovers on a given number of touches (carries, receptions, attempts).
+   Better players cough it up less often; rate is the base per-touch chance. */
+function fumbleCount(touches, ovr, rate){
+  let count = 0;
+  for(let i=0;i<touches;i++){
+    const chance = Math.max(0.004, rate - (ovr-75)/3200);
+    if(Math.random() < chance) count++;
+  }
+  return count;
+}
+
+function statQB(p, score){
+  if(!p) return null;
+  const comp = ri(16,28);
+  const att = comp + ri(4,12);
+  const yards = Math.max(90, Math.round(160 + (p.ovr-70)*3.2 + score*2 + rand(-15,15)));
+  const td = Math.max(0, Math.round(score/9 + rand(-0.5,0.5)));
+  const int = Math.max(0, ri(0,2) - Math.round((p.ovr-75)/20));
+  const fum = fumbleCount(att, p.ovr, 0.012);
+  const to = int + fum;
+  return `<b>QB</b> ${p.name}: ${comp}/${att}, ${yards} yds, ${td} TD, ${int} INT, ${to} TO`;
+}
+function statRB(p, score){
+  if(!p) return null;
+  const car = ri(12,22);
+  const yards = Math.max(20, Math.round(45 + (p.ovr-70)*1.6 + rand(-15,20)));
+  const td = Math.random() < 0.4 + (p.ovr-80)/100 ? 1 : 0;
+  const fum = fumbleCount(car, p.ovr, 0.03);
+  return `<b>RB</b> ${p.name}: ${car} car, ${yards} yds, ${td} TD, ${fum} TO`;
+}
+function statWR(p, label){
+  if(!p) return null;
+  const rec = ri(3,9);
+  const yards = Math.max(15, Math.round(35 + (p.ovr-70)*1.9 + rand(-15,20)));
+  const td = Math.random() < 0.22 + (p.ovr-80)/120 ? 1 : 0;
+  const fum = fumbleCount(rec, p.ovr, 0.025);
+  return `<b>${label}</b> ${p.name}: ${rec} rec, ${yards} yds, ${td} TD, ${fum} TO`;
+}
+function statTE(p){
+  if(!p) return null;
+  const rec = ri(2,7);
+  const yards = Math.max(10, Math.round(25 + (p.ovr-70)*1.4 + rand(-10,15)));
+  const td = Math.random() < 0.18 + (p.ovr-80)/140 ? 1 : 0;
+  const fum = fumbleCount(rec, p.ovr, 0.025);
+  return `<b>TE</b> ${p.name}: ${rec} rec, ${yards} yds, ${td} TD, ${fum} TO`;
+}
+function statDef(p){
+  if(!p) return null;
+  const sacks = Math.max(0, +(rand(0, 1.5 + (p.ovr-80)/25)).toFixed(1));
+  const takeaways = Math.max(0, ri(0,2));
+  return `<b>DEF</b> ${p.name}: ${sacks} sacks, ${takeaways} TO forced`;
+}
+function statTeamDef(p, oppScore){
+  if(!p) return null;
+  const sacks = Math.max(0, ri(1,5) + Math.round((p.ovr-85)/15));
+  const takeaways = ri(0,3);
+  return `<b>TEAM D</b> ${p.name}: ${sacks} sacks, ${takeaways} takeaways, held opp to ${oppScore}`;
+}
+
+function buildBoxScore(roster, teamScore, oppScore){
+  const lines = [
+    statQB(roster.QB, teamScore),
+    statRB(roster.RB, teamScore),
+    statWR(roster.WR[0], "WR1"),
+    statWR(roster.WR[1], "WR2"),
+    statTE(roster.TE),
+    statDef(roster.DEFENSE),
+    statTeamDef(roster.TEAMDEF, oppScore)
+  ].filter(Boolean);
+  return lines;
+}
+
+function renderBoxScore(elId, lines){
+  const el = $(elId);
+  el.innerHTML = "";
+  lines.forEach(l=>{
+    const div = document.createElement("div");
+    div.className = "stat-line";
+    div.innerHTML = l;
+    el.appendChild(div);
+  });
+}
+
+function goSimulate(){
+  const result = simulateGame();
+  hide("screen-roster"); show("screen-result");
+  $("final-user-score").textContent = result.userScore;
+  $("final-ai-score").textContent = result.aiScore;
+  ["1","2","3","4"].forEach((q,i)=>{
+    $("q-you-"+q).textContent = result.uQ[i];
+    $("q-ai-"+q).textContent = result.aQ[i];
+  });
+  $("q-you-f").textContent = result.userScore;
+  $("q-ai-f").textContent = result.aiScore;
+  $("recap-text").innerHTML = buildRecap(result);
+
+  renderBoxScore("box-user", buildBoxScore(state.userRoster, result.userScore, result.aiScore));
+  renderBoxScore("box-ai", buildBoxScore(state.aiRoster, result.aiScore, result.userScore));
+
+  saveMatchToHistory(result);
+}
+
+/* =====================================================================
+   MATCH HISTORY (persisted via the artifact storage API)
+===================================================================== */
+async function saveMatchToHistory(result){
+  if(!window.storage) return;
+  const record = {
+    ts: Date.now(),
+    userScore: result.userScore,
+    aiScore: result.aiScore,
+    won: result.userScore > result.aiScore,
+    qb: state.userRoster.QB?.name || "—",
+    def: state.userRoster.DEFENSE?.name || "—",
+    teamdef: state.userRoster.TEAMDEF?.name || "—",
+    coach: state.userRoster.COACH?.name || "—",
+    uPower: Math.round(result.uPower),
+    aPower: Math.round(result.aPower)
+  };
+  try{
+    let history = [];
+    try{
+      const res = await window.storage.get('match_history', false);
+      if(res && res.value) history = JSON.parse(res.value);
+    }catch(e){ history = []; }
+    history.unshift(record);
+    if(history.length > 50) history = history.slice(0,50);
+    await window.storage.set('match_history', JSON.stringify(history), false);
+  }catch(e){
+    console.error('Could not save match history', e);
+  }
+}
+
+async function loadMatchHistory(){
+  if(!window.storage) return [];
+  try{
+    const res = await window.storage.get('match_history', false);
+    if(res && res.value) return JSON.parse(res.value);
+  }catch(e){ /* no history saved yet */ }
+  return [];
+}
+
+function formatDate(ts){
+  const d = new Date(ts);
+  return d.toLocaleDateString(undefined, {month:'short', day:'numeric'}) + " · " +
+         d.toLocaleTimeString(undefined, {hour:'numeric', minute:'2-digit'});
+}
+
+async function showHistory(){
+  hide("screen-setup");
+  show("screen-history");
+  const list = $("history-list");
+  list.innerHTML = `<p class="lede">Loading your record...</p>`;
+  const history = await loadMatchHistory();
+  list.innerHTML = "";
+  if(history.length === 0){
+    $("history-empty").style.display = "block";
+    return;
+  }
+  $("history-empty").style.display = "none";
+  history.forEach(r=>{
+    const row = document.createElement("div");
+    row.className = "history-row";
+    row.innerHTML = `
+      <div class="hdate">${formatDate(r.ts)}</div>
+      <div class="hscore mono">${r.userScore} - ${r.aiScore}</div>
+      <div class="hbadge ${r.won?'win':'loss'}">${r.won?'WIN':'LOSS'}</div>
+      <div class="hmeta">QB: ${r.qb} &middot; DEF: ${r.def} &middot; Team D: ${r.teamdef} &middot; Coach: ${r.coach} &middot; Power ${r.uPower} vs ${r.aPower}</div>
+    `;
+    list.appendChild(row);
+  });
+}
+
+/* =====================================================================
+   WIRE UP
+===================================================================== */
+$("btn-start").addEventListener("click", startDraft);
+$("btn-simulate").addEventListener("click", goSimulate);
+$("btn-again").addEventListener("click", ()=>{
+  hide("screen-result");
+  show("screen-setup");
+});
+$("btn-view-history").addEventListener("click", showHistory);
+$("btn-history-back").addEventListener("click", ()=>{
+  hide("screen-history");
+  show("screen-setup");
+});
+</script>
+</body>
+</html>
