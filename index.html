@@ -196,6 +196,51 @@
   .history-row .hbadge.loss{background:rgba(201,75,52,.18); color:var(--rust-bright);}
   .history-row .hmeta{font-size:12px; color:var(--chalk-dim); width:100%;}
 
+  /* -------- PLAY-BY-PLAY SCREEN -------- */
+  .scorebug{padding:16px 20px;}
+  .sb-row{display:flex; align-items:center; justify-content:space-between; gap:10px;}
+  .sb-team{flex:1; text-align:center; transition:opacity .2s;}
+  .sb-team.on-clock{opacity:1;}
+  .sb-team .sb-name{font-size:14px; letter-spacing:.12em; color:var(--chalk-dim); text-transform:uppercase; display:flex; align-items:center; justify-content:center; gap:6px;}
+  .sb-team .sb-name .ball-dot{width:7px; height:7px; border-radius:50%; background:var(--gold); display:inline-block; visibility:hidden;}
+  .sb-team.on-clock .sb-name .ball-dot{visibility:visible;}
+  .sb-team .sb-score{font-family:'Teko'; font-size:44px; color:var(--gold); line-height:1;}
+  .sb-clock{flex:0 0 150px; text-align:center;}
+  .sb-clock .sb-quarter{font-size:13px; letter-spacing:.1em; color:var(--chalk-dim); text-transform:uppercase;}
+  .sb-clock .sb-time{font-family:'IBM Plex Mono'; font-size:26px; color:var(--chalk); line-height:1.2;}
+  .sb-clock .sb-down{font-size:12px; color:var(--gold); margin-top:2px; min-height:14px;}
+
+  .field-wrap{padding:16px;}
+  .field{
+    position:relative; height:90px; border-radius:6px; overflow:hidden;
+    background: linear-gradient(180deg, #163a24, #0f2a19);
+    border:1px solid var(--line); display:flex;
+  }
+  .field .endzone{
+    width:8%; flex-shrink:0; background:rgba(59,130,246,.16);
+    display:flex; align-items:center; justify-content:center;
+    writing-mode:vertical-rl; font-family:'Teko'; letter-spacing:.1em; font-size:13px; color:var(--chalk-dim);
+  }
+  .field .endzone.right{transform:rotate(180deg);}
+  .yardlines{position:relative; flex:1; height:100%;}
+  .yardlines .tick{position:absolute; top:0; bottom:0; width:1px; background:rgba(238,242,248,.16);}
+  .yardlines .tick.mid{background:rgba(238,242,248,.4); width:2px;}
+  .ball-marker{
+    position:absolute; top:50%; width:13px; height:13px; margin-left:-6.5px; margin-top:-6.5px;
+    border-radius:50%; background:var(--gold); box-shadow:0 0 10px rgba(59,130,246,.85);
+    transition: left .5s ease; z-index:3;
+  }
+  .fd-marker{
+    position:absolute; top:0; bottom:0; width:2px; background:var(--rust-bright);
+    transition:left .5s ease; z-index:2; display:none;
+  }
+  .possession-note{margin-top:10px; font-size:13px; color:var(--chalk-dim); text-align:center; letter-spacing:.03em;}
+
+  .playlog{max-height:230px; overflow-y:auto; display:flex; flex-direction:column-reverse; gap:6px;}
+  .play-entry{font-family:'IBM Plex Mono'; font-size:13px; color:var(--chalk-dim); border-left:2px solid var(--line); padding:5px 10px; line-height:1.4;}
+  .play-entry .pe-meta{color:var(--gold); margin-right:8px; font-weight:600;}
+  .play-entry.scoring{border-left-color:var(--gold); color:var(--chalk); background:rgba(59,130,246,.08);}
+
   .footnote{font-size:12px; color:var(--chalk-dim); text-align:center; margin-top:20px; opacity:.7;}
   .hidden{display:none !important;}
   .center{text-align:center;}
@@ -302,6 +347,48 @@
     </div>
   </div>
 
+  <!-- ===================== PLAY-BY-PLAY SCREEN ===================== -->
+  <div id="screen-playbyplay" class="hidden">
+    <div class="scorebug panel">
+      <div class="sb-row">
+        <div class="sb-team you" id="pbp-team-user">
+          <div class="sb-name"><span class="ball-dot"></span>YOU</div>
+          <div class="sb-score mono" id="pbp-user-score">0</div>
+        </div>
+        <div class="sb-clock">
+          <div class="sb-quarter" id="pbp-quarter">Q1</div>
+          <div class="sb-time" id="pbp-clock">15:00</div>
+          <div class="sb-down" id="pbp-down">&nbsp;</div>
+        </div>
+        <div class="sb-team rival" id="pbp-team-ai">
+          <div class="sb-name"><span class="ball-dot"></span>RIVAL</div>
+          <div class="sb-score mono" id="pbp-ai-score">0</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="field-wrap panel">
+      <div class="field" id="pbp-field">
+        <div class="endzone left">YOU</div>
+        <div class="yardlines" id="pbp-yardlines"></div>
+        <div class="fd-marker" id="pbp-fd-marker"></div>
+        <div class="ball-marker" id="pbp-ball-marker"></div>
+        <div class="endzone right">RIVAL</div>
+      </div>
+      <div class="possession-note" id="pbp-poss-note">Getting set for kickoff...</div>
+    </div>
+
+    <div class="panel">
+      <div class="slot-label">PLAY BY PLAY</div>
+      <div class="playlog" id="pbp-log"></div>
+      <div class="flex-actions">
+        <button class="btn" id="btn-pbp-play">Pause</button>
+        <button class="btn secondary" id="btn-pbp-speed">Speed: 1x</button>
+        <button class="btn secondary" id="btn-pbp-skip">Skip to End</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ===================== RESULT SCREEN ===================== -->
   <div id="screen-result" class="hidden">
     <div class="scoreboard">
@@ -317,10 +404,10 @@
         </div>
       </div>
       <table class="quarter-table">
-        <thead><tr><th></th><th>Q1</th><th>Q2</th><th>Q3</th><th>Q4</th><th>F</th></tr></thead>
+        <thead><tr><th></th><th>Q1</th><th>Q2</th><th>Q3</th><th>Q4</th><th id="ot-head" class="hidden">OT</th><th>F</th></tr></thead>
         <tbody>
-          <tr><td>You</td><td id="q-you-1"></td><td id="q-you-2"></td><td id="q-you-3"></td><td id="q-you-4"></td><td id="q-you-f"></td></tr>
-          <tr><td>Rival</td><td id="q-ai-1"></td><td id="q-ai-2"></td><td id="q-ai-3"></td><td id="q-ai-4"></td><td id="q-ai-f"></td></tr>
+          <tr><td>You</td><td id="q-you-1"></td><td id="q-you-2"></td><td id="q-you-3"></td><td id="q-you-4"></td><td id="q-you-ot" class="hidden"></td><td id="q-you-f"></td></tr>
+          <tr><td>Rival</td><td id="q-ai-1"></td><td id="q-ai-2"></td><td id="q-ai-3"></td><td id="q-ai-4"></td><td id="q-ai-ot" class="hidden"></td><td id="q-ai-f"></td></tr>
         </tbody>
       </table>
       <div class="recap" id="recap-text"></div>
@@ -891,27 +978,37 @@ function aiMaxWillingness(player){
   const target = spendable * share;
 
   const avg = POSITION_AVG_OVR[pos] || 85;
-  const qualityFactor = Math.max(0.5, Math.min(1.6, 0.7 + (player.ovr - avg)/25));
-  let willing = target * qualityFactor;
+  // Difficulty pass: the rival GM now rewards top-end talent much more
+  // steeply and carries a flat aggression multiplier on top of that, so
+  // it consistently outbids passive play instead of folding early.
+  const qualityFactor = Math.max(0.55, Math.min(1.9, 0.75 + (player.ovr - avg)/22));
+  let willing = target * qualityFactor * 1.12;
 
   // Value-over-replacement: check what's still sitting in the pool at this
   // spot before deciding how much this particular player is worth chasing.
   const bestAlt = bestAvailableOvr(pos);
   if(bestAlt === 0){
     // Last one of its kind left in the pool — don't let it go for pennies.
-    willing *= 1.18;
+    willing *= 1.32;
   } else if(bestAlt >= player.ovr - 2){
-    // A comparable (or better) option is still on the board — no rush to overpay.
-    willing *= 0.88;
+    // A comparable (or better) option is still on the board — stays close
+    // to the price rather than backing off entirely.
+    willing *= 0.94;
   }
 
   // Scarcity: weigh remaining need at this spot (across both teams) against
   // how many bodies are actually left in the pool to fill it.
   const scarcity = positionScarcity(pos);
   if(scarcity >= 1.2){
-    willing *= 1.12;
+    willing *= 1.2;
   } else if(scarcity <= 0.5){
-    willing *= 0.92;
+    willing *= 0.95;
+  }
+
+  // Elite (95+ OVR) talent gets a hard floor on willingness — the rival GM
+  // will dig well into its reserve rather than let a franchise piece slide.
+  if(player.ovr >= 95){
+    willing = Math.max(willing, spendable*0.55);
   }
 
   willing = Math.min(willing, spendable);
@@ -1052,11 +1149,13 @@ function aiCounterIncrement(player, willing, current){
 
   // The user is nearly out of room to keep raising — win it as cheaply as possible.
   if(userHeadroom <= 1) return Math.min(1, gap);
+  // Elite (95+ OVR) talent — always press hard, no matter the spot.
+  if(player.ovr >= 95) return Math.min(5, gap);
   // Clear step-up talent at a spot with more mouths to feed than bodies left —
   // press the advantage and try to close the auction out early.
-  if(scarce && valueGap > 4) return Math.min(5, gap);
-  if(valueGap > 8) return Math.min(5, gap);
-  if(scarce || valueGap > 3) return Math.min(3, gap);
+  if(scarce && valueGap > 2) return Math.min(5, gap);
+  if(valueGap > 5) return Math.min(5, gap);
+  if(scarce || valueGap > 1) return Math.min(3, gap);
   // Otherwise, raise the minimum and conserve budget for future needs.
   return Math.min(1, gap);
 }
@@ -1121,9 +1220,9 @@ function renderAiOnlyScenario(player){
    the same budget-paced valuation as the live bidding war. */
 function resolveAiUncontested(player, thenAdvance){
   const willing = aiMaxWillingness(player);
-  const price = Math.max(1, Math.round(willing * 0.35));
+  const price = Math.max(1, Math.round(willing * 0.45));
   const avg = POSITION_AVG_OVR[player.pos] || 85;
-  const interestChance = Math.max(0.15, Math.min(0.95, 0.5 + (player.ovr-avg)/40));
+  const interestChance = Math.max(0.28, Math.min(0.97, 0.6 + (player.ovr-avg)/32));
   const reserve = totalAiNeed() - 1;
   const canAfford = (state.aiBudget - reserve) >= price;
   let wants = Math.random() < interestChance && canAfford && aiNeed(player.pos) > 0;
@@ -1239,69 +1338,274 @@ function teamPower(roster){
   return base*coachMult + synergy;
 }
 
-function simulateGame(){
-  const uPower = teamPower(state.userRoster);
-  const aPower = teamPower(state.aiRoster);
-  const diff = uPower - aPower;
-  const spread = Math.max(-15, Math.min(15, diff/6));
-  const base = 23;
-  const userExpected = Math.max(3, Math.round(base + spread/2 + rand(-6,6)));
-  const aiExpected = Math.max(3, Math.round(base - spread/2 + rand(-6,6)));
-
-  let uGame = generateRealisticGame(userExpected);
-  let aGame = generateRealisticGame(aiExpected);
-  let userScore = uGame.total, aiScore = aGame.total;
-
-  if(userScore === aiScore){
-    // Break the tie with one more legal scoring play (a field goal), same
-    // way a real game would settle it, tacked onto the 4th quarter.
-    if(uPower >= aPower){ uGame.quarters[3] += 3; userScore += 3; }
-    else{ aGame.quarters[3] += 3; aiScore += 3; }
-  }
-
-  return {userScore, aiScore, uQ: uGame.quarters, aQ: aGame.quarters, uPower, aPower};
+/* =====================================================================
+   DRIVE-BY-DRIVE PLAY-BY-PLAY ENGINE
+   Simulates real possessions (downs, distance, field position, game
+   clock) instead of an abstract point total, so the score, quarter
+   splits, and every play in the log are all internally consistent —
+   including a real running clock from 15:00 in Q1 down to 0:00, and a
+   sudden-death overtime period if the teams are tied after regulation.
+===================================================================== */
+function offenseRating(roster){
+  const qb=roster.QB?.ovr||72, rb=roster.RB?.ovr||72, w1=roster.WR[0]?.ovr||72,
+        w2=roster.WR[1]?.ovr||72, te=roster.TE?.ovr||72, coach=roster.COACH?.ovr||85;
+  const base = qb*0.34 + rb*0.18 + w1*0.20 + w2*0.16 + te*0.12;
+  return base * (1 + (coach-90)/300);
 }
-
-/* ---------------------------------------------------------------------
-   Build a final score out of real NFL scoring plays only — touchdown
-   +XP (7), field goal (3), touchdown +2pt (8, rare), touchdown with a
-   missed/blocked XP (6, rare), and safety (2, very rare) — so no
-   quarter or final total can land on a number that's actually
-   impossible to score in a real game (e.g. a lone "4" in a quarter).
---------------------------------------------------------------------- */
-const SCORING_PLAYS = [
-  {pts:7, w:54}, {pts:3, w:34}, {pts:8, w:5}, {pts:6, w:5}, {pts:2, w:2},
-];
-function pickScoringPlay(){
-  const totalW = SCORING_PLAYS.reduce((s,c)=>s+c.w,0);
+function defenseRating(roster){
+  const d=roster.DEFENSE?.ovr||72, td=roster.TEAMDEF?.ovr||72, coach=roster.COACH?.ovr||85;
+  const base = d*0.52 + td*0.48;
+  return base * (1 + (coach-90)/350);
+}
+function absFieldPos(team, yardlineVal){ return team==="user" ? yardlineVal : (100-yardlineVal); }
+function downDistanceText(down, distance, yardline){
+  const distToGoal = 100-yardline;
+  const distStr = distToGoal < distance ? "Goal" : distance;
+  return ["1st","2nd","3rd","4th"][down-1] + " & " + distStr;
+}
+function pickTarget(offRoster){
+  const opts=[];
+  if(offRoster.WR[0]) opts.push({key:"wr1", p:offRoster.WR[0], w:36});
+  if(offRoster.WR[1]) opts.push({key:"wr2", p:offRoster.WR[1], w:29});
+  if(offRoster.TE) opts.push({key:"te", p:offRoster.TE, w:23});
+  if(offRoster.RB) opts.push({key:"rb", p:offRoster.RB, w:12});
+  if(!opts.length) return null;
+  const totalW = opts.reduce((s,o)=>s+o.w,0);
   let r = Math.random()*totalW;
-  for(const c of SCORING_PLAYS){
-    if(r < c.w) return c.pts;
-    r -= c.w;
-  }
-  return 3;
+  for(const o of opts){ if(r<o.w) return o; r-=o.w; }
+  return opts[0];
 }
-function generateRealisticGame(expected){
-  const quarters = [0,0,0,0];
-  let total = 0;
-  let guard = 0;
-  // Slightly favors the 2nd (two-minute drill) and 4th (comeback/garbage
-  // time) quarters for scoring plays, like real NFL scoring distribution.
-  const qWeights = [22,28,22,28];
-  while(guard++ < 25){
-    if(total >= expected && Math.random() < 0.55) break;
-    if(total >= expected + 9) break;
-    const pts = pickScoringPlay();
-    total += pts;
-    const qTotalW = qWeights.reduce((s,w)=>s+w,0);
-    let r = Math.random()*qTotalW, qi = 0;
-    for(let i=0;i<4;i++){
-      if(r < qWeights[i]){ qi = i; break; }
-      r -= qWeights[i];
+function simulatePlay(offRoster, defRoster, down, distance){
+  const offR = offenseRating(offRoster), defR = defenseRating(defRoster);
+  const diff = offR - defR;
+
+  let playType;
+  if(down===1) playType = Math.random()<0.55 ? "run":"pass";
+  else if(down===2) playType = distance<=3 ? (Math.random()<0.6?"run":"pass") : (Math.random()<0.4?"run":"pass");
+  else playType = distance<=2 ? (Math.random()<0.42?"run":"pass") : (Math.random()<0.18?"run":"pass");
+
+  let yards=0, timeUsed=25, turnover=false, turnoverType=null, incomplete=false, sack=false, big=false, target=null;
+
+  if(playType==="run"){
+    yards = Math.round(3.2 + diff*0.045 + rand(-2.5,3.5));
+    if(Math.random() < 0.045 + Math.max(0,diff)*0.0022){ yards += ri(12,45); big=true; }
+    yards = Math.max(yards, -6);
+    timeUsed = ri(24,40);
+    const fumbleChance = Math.max(0.006, 0.017 - diff*0.00035);
+    if(Math.random()<fumbleChance){ turnover=true; turnoverType="fumble"; }
+  } else {
+    target = pickTarget(offRoster);
+    sack = Math.random() < Math.max(0.025, 0.075 - diff*0.0011);
+    if(sack){
+      yards = -ri(3,9);
+      timeUsed = ri(18,30);
+    } else {
+      const incChance = Math.min(0.55, Math.max(0.18, 0.36 - diff*0.0042));
+      if(Math.random() < incChance){
+        incomplete = true; yards = 0; timeUsed = ri(4,8);
+      } else {
+        yards = Math.round(6.4 + diff*0.095 + rand(-3,6));
+        if(Math.random() < 0.10 + Math.max(0,diff)*0.003){ yards += ri(15,45); big=true; }
+        timeUsed = ri(22,38);
+        const intChance = Math.max(0.008, 0.028 - diff*0.0006);
+        if(Math.random()<intChance){ turnover=true; turnoverType="interception"; yards=Math.max(0,Math.round(yards*0.3)); }
+      }
     }
-    quarters[qi] += pts;
   }
-  return {total, quarters};
+  return {playType, yards, timeUsed, turnover, turnoverType, incomplete, sack, big, target};
+}
+function describePlay(offRoster, result, down, distance, yardline){
+  const qb = offRoster.QB?.name || "The QB";
+  const rb = offRoster.RB?.name || "The running back";
+  const dt = downDistanceText(down, distance, yardline);
+  if(result.playType==="run"){
+    const yd = result.yards;
+    const bigTxt = result.big ? " — breaks free for extra yardage!" : "";
+    return `${dt}: ${rb} rushes ${yd>=0?"for "+yd:"for a loss of "+Math.abs(yd)} yard${Math.abs(yd)===1?"":"s"}.${bigTxt}`;
+  }
+  const targetName = result.target ? result.target.p.name : "a receiver";
+  if(result.sack) return `${dt}: ${qb} is sacked for a loss of ${Math.abs(result.yards)}.`;
+  if(result.incomplete) return `${dt}: ${qb} pass incomplete, intended for ${targetName}.`;
+  const bigTxt = result.big ? " Big gain down the field!" : "";
+  return `${dt}: ${qb} completes to ${targetName} for ${result.yards} yards.${bigTxt}`;
+}
+
+function simulateFullGame(userRoster, aiRoster){
+  const uPower = teamPower(userRoster);
+  const aPower = teamPower(aiRoster);
+
+  let clock=900, quarterIdx=0, inOT=false, gameOver=false;
+  let possession = Math.random()<0.5 ? "user" : "ai";
+  let yardline=25, down=1, distance=10;
+  const scores={user:0, ai:0};
+  const quarterPts={user:[0,0,0,0], ai:[0,0,0,0]};
+  const otPts={user:0, ai:0};
+  const plays=[];
+
+  const rosterOf = team => team==="user" ? userRoster : aiRoster;
+  const oppOf = team => team==="user" ? "ai" : "user";
+  const fmtClock = sec => { sec=Math.max(0,Math.round(sec)); const m=Math.floor(sec/60), s=sec%60; return m+":"+String(s).padStart(2,"0"); };
+  const quarterLabel = () => quarterIdx<4 ? "Q"+(quarterIdx+1) : "OT";
+
+  function pushEntry(text, opts){
+    opts = opts||{};
+    plays.push({
+      quarter: quarterLabel(),
+      clock: fmtClock(clock),
+      text,
+      downText: opts.downText || "",
+      possession: opts.possessionOverride || possession,
+      fieldPos: opts.fieldPos!==undefined ? opts.fieldPos : absFieldPos(possession, yardline),
+      fdFieldPos: opts.fdFieldPos,
+      showFd: !!opts.showFd,
+      scoring: !!opts.scoring,
+      scoreUser: scores.user,
+      scoreAi: scores.ai
+    });
+  }
+  function addScore(team, pts){
+    scores[team]+=pts;
+    if(quarterIdx<4) quarterPts[team][quarterIdx]+=pts; else otPts[team]+=pts;
+  }
+  function kickoff(receivingTeam){ possession=receivingTeam; yardline=25; down=1; distance=10; }
+  // Advances the quarter/OT clock when time expires. Returns true if the
+  // caller should stop processing this iteration (quarter/game boundary).
+  function advanceClock(){
+    if(clock>0) return false;
+    clock=0;
+    if(quarterIdx<3){
+      quarterIdx++; clock=900;
+      pushEntry(`End of ${["Q1","Q2","Q3"][quarterIdx-1]}.`, {showFd:false});
+      return false;
+    } else if(quarterIdx===3){
+      if(scores.user!==scores.ai){ gameOver=true; return true; }
+      quarterIdx=4; inOT=true; clock=600;
+      possession = Math.random()<0.5?"user":"ai";
+      yardline=25; down=1; distance=10;
+      pushEntry(`End of regulation, tied ${scores.user}-${scores.ai}. Sudden-death overtime!`, {showFd:false});
+      return false;
+    }
+    gameOver=true;
+    return true;
+  }
+
+  const openNote = possession==="user" ? "You win the coin toss and elect to receive." : "Rival GM wins the toss and elects to receive.";
+  pushEntry(openNote, {showFd:false});
+
+  let guard=0;
+  while(guard++ < 300 && !gameOver){
+    if(clock<=0){ if(advanceClock()) break; continue; }
+
+    const offense=possession, defense=oppOf(possession);
+    const offRoster=rosterOf(offense), defRoster=rosterOf(defense);
+
+    if(down===4){
+      const distToGoal=100-yardline;
+      const coachOvr = offRoster.COACH?.ovr||85;
+      let action;
+      if(distance<=2 && distToGoal>5 && Math.random() < 0.28 + Math.max(0,(coachOvr-85))/150) action="go";
+      else if(distToGoal<=38) action="fg";
+      else action="punt";
+
+      if(action==="fg"){
+        const kickDist=distToGoal+17;
+        const fgChance=Math.min(0.98, Math.max(0.35, 0.98-Math.max(0,kickDist-30)*0.014));
+        clock -= ri(5,9);
+        if(Math.random()<fgChance){
+          pushEntry(`${downDistanceText(4,distance,yardline)}: ${kickDist}-yard field goal attempt... it's GOOD!`, {scoring:true, showFd:false});
+          addScore(offense,3);
+          if(inOT){ gameOver=true; break; }
+          if(advanceClock()) break;
+          kickoff(defense);
+          continue;
+        } else {
+          pushEntry(`${downDistanceText(4,distance,yardline)}: ${kickDist}-yard field goal attempt is NO GOOD.`, {showFd:false});
+          possession=defense; yardline=Math.max(1,100-yardline); down=1; distance=10;
+          if(advanceClock()) break;
+          continue;
+        }
+      }
+      if(action==="punt"){
+        clock -= ri(5,9);
+        const puntNet=ri(35,48);
+        const landSpot=yardline+puntNet;
+        let newYardline, touchback=false;
+        if(landSpot>=100){ newYardline=20; touchback=true; } else { newYardline=Math.max(1,100-landSpot); }
+        pushEntry(`${downDistanceText(4,distance,yardline)}: Punt${touchback?", touchback":""}.`, {showFd:false});
+        possession=defense; yardline=newYardline; down=1; distance=10;
+        if(advanceClock()) break;
+        continue;
+      }
+      // action === "go" falls through into a normal play below
+    }
+
+    const result = simulatePlay(offRoster, defRoster, down, distance);
+    const preDownText = downDistanceText(down, distance, yardline);
+    clock -= result.timeUsed;
+    const desc = describePlay(offRoster, result, down, distance, yardline);
+
+    if(result.turnover){
+      const spot = Math.max(0, Math.min(100, yardline+result.yards));
+      pushEntry(`${desc} ${result.turnoverType==="fumble"?"FUMBLE, recovered by the defense!":"INTERCEPTED!"}`,
+        {downText:preDownText, showFd:false, fieldPos: absFieldPos(offense, spot)});
+      possession=defense; yardline=Math.max(1,100-spot); down=1; distance=10;
+      if(advanceClock()) break;
+      continue;
+    }
+
+    const newSpot = yardline+result.yards;
+    if(newSpot<=0){
+      pushEntry(`${desc} — tackled in the end zone for a SAFETY!`, {downText:preDownText, scoring:true, showFd:false, fieldPos: absFieldPos(offense,0)});
+      addScore(defense,2);
+      if(inOT){ gameOver=true; break; }
+      if(advanceClock()) break;
+      possession=defense; yardline=30; down=1; distance=10;
+      continue;
+    }
+
+    yardline = Math.max(0, Math.min(100, newSpot));
+
+    if(yardline>=100){
+      pushEntry(`${desc} TOUCHDOWN!`, {downText:preDownText, scoring:true, showFd:false, fieldPos: absFieldPos(offense,100)});
+      addScore(offense,6);
+      if(inOT){ gameOver=true; break; }
+      if(Math.random()<0.95){ addScore(offense,1); pushEntry("Extra point is good.", {scoring:true, showFd:false, fieldPos:absFieldPos(offense,100)}); }
+      else{ pushEntry("Extra point is NO GOOD.", {showFd:false, fieldPos:absFieldPos(offense,100)}); }
+      if(advanceClock()) break;
+      kickoff(defense);
+      continue;
+    }
+
+    const fdSpot = yardline + (result.incomplete ? distance : Math.max(0,distance-result.yards));
+    pushEntry(desc, {downText:preDownText, showFd:true, fdFieldPos: absFieldPos(offense, Math.min(100,fdSpot))});
+
+    if(!result.incomplete) distance -= result.yards;
+    if(distance<=0){ down=1; distance=10; }
+    else{
+      down+=1;
+      if(down>4){
+        pushEntry("Turnover on downs.", {showFd:false});
+        possession=defense; yardline=Math.max(1,100-yardline); down=1; distance=10;
+      }
+    }
+    if(advanceClock()) break;
+  }
+
+  if(!gameOver && scores.user===scores.ai){
+    // Extremely unlikely guard-exhaustion fallback — settle it with a
+    // field goal for whichever roster graded out stronger, same as a
+    // real game would eventually be decided.
+    if(uPower>=aPower){ addScore("user",3); } else { addScore("ai",3); }
+  }
+
+  return {
+    plays,
+    userScore: scores.user, aiScore: scores.ai,
+    uQ: quarterPts.user, aQ: quarterPts.ai,
+    otUser: otPts.user, otAi: otPts.ai,
+    hadOT: inOT,
+    uPower, aPower
+  };
 }
 
 const RECAP_ADJ = ["dominant","surgical","relentless","clutch","suffocating","electric"];
@@ -1460,15 +1764,119 @@ function renderBoxScore(elId, lines){
   });
 }
 
-function goSimulate(){
-  const result = simulateGame();
-  hide("screen-roster"); show("screen-result");
+/* =====================================================================
+   PLAY-BY-PLAY PLAYBACK (Madden/ESPN-style broadcast view)
+===================================================================== */
+let pbp = {plays:[], idx:0, timer:null, speed:1, playing:false};
+
+function buildFieldTicks(){
+  const wrap = $("pbp-yardlines");
+  wrap.innerHTML = "";
+  for(let i=0;i<=10;i++){
+    const t = document.createElement("div");
+    t.className = "tick" + (i===5 ? " mid" : "");
+    t.style.left = (i*10)+"%";
+    wrap.appendChild(t);
+  }
+}
+function updateFieldMarkers(fieldPos, fdFieldPos, showFd){
+  const clamp = v => Math.max(0, Math.min(100, v));
+  $("pbp-ball-marker").style.left = (8 + clamp(fieldPos)*0.84) + "%";
+  const fd = $("pbp-fd-marker");
+  if(showFd && fdFieldPos!==undefined){
+    fd.style.left = (8 + clamp(fdFieldPos)*0.84) + "%";
+    fd.style.display = "block";
+  } else {
+    fd.style.display = "none";
+  }
+}
+function setOnClock(team){
+  $("pbp-team-user").classList.toggle("on-clock", team==="user");
+  $("pbp-team-ai").classList.toggle("on-clock", team==="ai");
+}
+
+function startPlayByPlay(){
+  const sim = simulateFullGame(state.userRoster, state.aiRoster);
+  state.lastSim = sim;
+  hide("screen-roster"); show("screen-playbyplay");
+  buildFieldTicks();
+  $("pbp-log").innerHTML = "";
+  $("pbp-user-score").textContent = "0";
+  $("pbp-ai-score").textContent = "0";
+  $("pbp-quarter").textContent = "Q1";
+  $("pbp-clock").textContent = "15:00";
+  $("pbp-down").innerHTML = "&nbsp;";
+  updateFieldMarkers(25, 35, false);
+  const first = sim.plays[0];
+  setOnClock(first ? first.possession : "user");
+  $("pbp-poss-note").textContent = first ? first.text : "Kickoff...";
+
+  pbp = {plays: sim.plays, idx:0, timer:null, speed:1, playing:false};
+  $("btn-pbp-play").textContent = "Pause";
+  $("btn-pbp-play").disabled = false;
+  $("btn-pbp-skip").disabled = false;
+  togglePbpPlaying(true);
+}
+
+function renderPbpPlay(play){
+  $("pbp-quarter").textContent = play.quarter;
+  $("pbp-clock").textContent = play.clock;
+  $("pbp-down").textContent = play.downText || "\u00A0";
+  $("pbp-user-score").textContent = play.scoreUser;
+  $("pbp-ai-score").textContent = play.scoreAi;
+  $("pbp-poss-note").textContent = play.text;
+  setOnClock(play.possession);
+  updateFieldMarkers(play.fieldPos, play.fdFieldPos, play.showFd);
+
+  const row = document.createElement("div");
+  row.className = "play-entry" + (play.scoring ? " scoring" : "");
+  row.innerHTML = `<span class="pe-meta">${play.quarter} ${play.clock}</span>${play.text}`;
+  $("pbp-log").prepend(row);
+}
+
+function togglePbpPlaying(forcePlay){
+  if(pbp.idx >= pbp.plays.length) return;
+  pbp.playing = forcePlay!==undefined ? forcePlay : !pbp.playing;
+  $("btn-pbp-play").textContent = pbp.playing ? "Pause" : "Play";
+  if(pbp.playing) stepPbp(); else clearTimeout(pbp.timer);
+}
+function stepPbp(){
+  if(!pbp.playing) return;
+  if(pbp.idx >= pbp.plays.length){ finishPlayByPlay(); return; }
+  renderPbpPlay(pbp.plays[pbp.idx]);
+  pbp.idx += 1;
+  const delay = Math.max(220, 1100/pbp.speed);
+  pbp.timer = setTimeout(stepPbp, delay);
+}
+function skipToEndPbp(){
+  clearTimeout(pbp.timer);
+  pbp.playing = false;
+  while(pbp.idx < pbp.plays.length){
+    renderPbpPlay(pbp.plays[pbp.idx]);
+    pbp.idx += 1;
+  }
+  finishPlayByPlay();
+}
+function finishPlayByPlay(){
+  $("btn-pbp-play").disabled = true;
+  $("btn-pbp-skip").disabled = true;
+  setTimeout(()=> finalizeGameResult(state.lastSim), 900);
+}
+
+function finalizeGameResult(result){
+  hide("screen-playbyplay"); show("screen-result");
   $("final-user-score").textContent = result.userScore;
   $("final-ai-score").textContent = result.aiScore;
   ["1","2","3","4"].forEach((q,i)=>{
     $("q-you-"+q).textContent = result.uQ[i];
     $("q-ai-"+q).textContent = result.aQ[i];
   });
+  const showOT = result.hadOT;
+  ["ot-head","q-you-ot","q-ai-ot"].forEach(id=> $(id).classList.toggle("hidden", !showOT));
+  if(showOT){
+    $("q-you-ot").textContent = result.otUser;
+    $("q-ai-ot").textContent = result.otAi;
+  }
   $("q-you-f").textContent = result.userScore;
   $("q-ai-f").textContent = result.aiScore;
   $("recap-text").innerHTML = buildRecap(result);
@@ -1554,7 +1962,15 @@ async function showHistory(){
    WIRE UP
 ===================================================================== */
 $("btn-start").addEventListener("click", startDraft);
-$("btn-simulate").addEventListener("click", goSimulate);
+$("btn-simulate").addEventListener("click", startPlayByPlay);
+$("btn-pbp-play").addEventListener("click", ()=> togglePbpPlaying());
+$("btn-pbp-skip").addEventListener("click", skipToEndPbp);
+$("btn-pbp-speed").addEventListener("click", ()=>{
+  const speeds = [1,2,4];
+  const i = speeds.indexOf(pbp.speed);
+  pbp.speed = speeds[(i+1)%speeds.length];
+  $("btn-pbp-speed").textContent = "Speed: "+pbp.speed+"x";
+});
 $("btn-again").addEventListener("click", ()=>{
   hide("screen-result");
   show("screen-setup");
